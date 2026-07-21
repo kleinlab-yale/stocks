@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#07110f" />
-    <meta name="description" content="A free cost-basis-aware portfolio and momentum scorecard." />
+    <meta name="description" content="A free cost-basis-aware portfolio, watchlist, and momentum scorecard." />
     <meta property="og:title" content="TickerQuest — Portfolio Scorecard" />
     <meta property="og:description" content="Track cost basis, daily and weekly movement, and portfolio momentum." />
     <meta property="og:image" content="./og-v2.png" />
@@ -133,6 +133,24 @@
         <div class="stock-grid" id="stock-grid" aria-live="polite">
           <div class="skeleton-card"></div>
           <div class="skeleton-card"></div>
+        </div>
+      </section>
+
+      <section class="watchlist shell" aria-labelledby="watchlist-heading">
+        <div class="section-heading watch-heading">
+          <div>
+            <p class="eyebrow muted"><span>Considering</span><span class="rule"></span><span id="watch-count">0 watched</span></p>
+            <h2 id="watchlist-heading">Watchlist</h2>
+          </div>
+          <form class="watch-form" id="watch-form">
+            <label class="visually-hidden" for="watch-input">Ticker to watch</label>
+            <input id="watch-input" name="watch-ticker" placeholder="Ticker to watch" maxlength="10" autocomplete="off" spellcheck="false" aria-describedby="watch-note" />
+            <button type="submit">Watch</button>
+          </form>
+        </div>
+        <p class="watch-note" id="watch-note" role="status">Watched stocks stay separate from your portfolio totals.</p>
+        <div class="watch-grid" id="watch-grid" aria-live="polite">
+          <div class="watch-empty">Your watchlist is empty.</div>
         </div>
       </section>
 

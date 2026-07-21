@@ -61,3 +61,22 @@ test("creates the default lineup only when no saved portfolio exists", () => {
   assert.equal(holdings.length, 2);
   assert.equal(holdings[0].lots[0].price, null);
 });
+
+test("normalizes and deduplicates browser watchlist entries", () => {
+  const watchlist = Portfolio.normalizeWatchlist([
+    " nvda ",
+    { symbol: "META" },
+    "NVDA",
+    "not a ticker",
+    { symbol: "brk.b" },
+  ]);
+  assert.deepEqual(watchlist, ["NVDA", "META", "BRK.B"]);
+});
+
+test("keeps owned positions out of the watchlist", () => {
+  const watchlist = Portfolio.normalizeWatchlist(
+    ["NVDA", "AMD", "GOOG"],
+    [{ symbol: "NVDA", lots: [] }, { symbol: "goog", lots: [] }],
+  );
+  assert.deepEqual(watchlist, ["AMD"]);
+});

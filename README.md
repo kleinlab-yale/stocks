@@ -1,6 +1,6 @@
 # TickerQuest
 
-A free, static portfolio scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily, weekly, and overnight signals into transparent 0–100 scores.
+A free, static portfolio and watchlist scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily, weekly, and overnight signals into transparent 0–100 scores.
 
 ## Change the tracked tickers
 
@@ -15,7 +15,9 @@ The included lineup is NVDA, META, AMD, MSFT, GOOG, TSM, and EOSE. The file uses
 ]
 ```
 
-The next scheduled run will refresh those symbols. Visitors can add or remove symbols and record any number of purchases for the same ticker, each with its own share count and price paid. The page aggregates the lots into total shares, weighted average cost, cost basis, and unrealized gain or loss. These personal choices stay in that browser. Existing version-one share counts migrate automatically as purchase lots with an unknown price, ready for the user to fill in. A symbol added only in the browser will show as pending until it is also added to `config/watchlist.json`.
+The next scheduled run will refresh those symbols. Visitors can keep stocks they are considering in a separate browser-local Watchlist without affecting portfolio value, weighting, P&L, or scores. Recording a purchase from a watched ticker moves it into the portfolio automatically.
+
+Visitors can also add or remove holdings and record any number of purchases for the same ticker, each with its own share count and price paid. The page aggregates the lots into total shares, weighted average cost, cost basis, and unrealized gain or loss. These personal choices stay in that browser. Existing version-one share counts migrate automatically as purchase lots with an unknown price, ready for the user to fill in. A symbol added only in the browser will show as pending until it is also added to `config/watchlist.json`.
 
 ## Publish on GitHub Pages
 

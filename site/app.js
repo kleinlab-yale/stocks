@@ -1,9 +1,10 @@
 const STORAGE_KEY = "tickerquest:holdings:v2";
 const LEGACY_STORAGE_KEY = "tickerquest:holdings:v1";
+const WATCH_STORAGE_KEY = "tickerquest:watchlist:v1";
 const Portfolio = window.TickerQuestPortfolio;
 let lotSequence = 0;
 
-const state = { data: null, holdings: [], period: "day", openLots: new Set() };
+const state = { data: null, holdings: [], watchlist: [], period: "day", openLots: new Set() };
 
 const elements = {
   form: document.querySelector("#ticker-form"),
@@ -12,6 +13,11 @@ const elements = {
   price: document.querySelector("#price-input"),
   formNote: document.querySelector("#form-note"),
   grid: document.querySelector("#stock-grid"),
+  watchForm: document.querySelector("#watch-form"),
+  watchInput: document.querySelector("#watch-input"),
+  watchNote: document.querySelector("#watch-note"),
+  watchGrid: document.querySelector("#watch-grid"),
+  watchCount: document.querySelector("#watch-count"),
   sessionChip: document.querySelector("#session-chip"),
   sessionLabel: document.querySelector("#session-label"),
   freshness: document.querySelector("#freshness-badge"),
@@ -141,6 +147,20 @@ function loadHoldings(symbols) {
 
 function persistHoldings() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state.holdings));
+}
+
+function loadWatchlist() {
+  let saved = null;
+  try {
+    saved = JSON.parse(localStorage.getItem(WATCH_STORAGE_KEY));
+  } catch (_) {
+    saved = null;
+  }
+  return Portfolio.normalizeWatchlist(saved, state.holdings);
+}
+
+function persistWatchlist() {
+  localStorage.setItem(WATCH_STORAGE_KEY, JSON.stringify(state.watchlist));
 }
 
 function setSession(session) {
@@ -376,6 +396,64 @@ function renderStock(holding, stock, totalValue) {
   return card;
 }
 
+function renderWatchStock(symbol, stock) {
+  const card = document.createElement("article");
+  card.className = "watch-card";
+  card.dataset.watchSymbol = symbol;
+  if (!stock || !Number.isFinite(finite(stock.price))) {
+    card.classList.add("pending");
+    card.innerHTML = `
+      <div class="watch-card-top">
+        <div><strong>${escapeHTML(symbol)}</strong><span>Waiting for market data</span></div>
+        <button class="watch-remove" type="button" data-unwatch="${escapeHTML(symbol)}" aria-label="Remove ${escapeHTML(symbol)} from watchlist">×</button>
+      </div>
+      <p>Saved on this device. Add the symbol to the repository feed for scheduled quotes.</p>
+      <div class="watch-actions"><a href="https://github.com/kleinlab-yale/stocks/edit/main/config/watchlist.json">Sync on GitHub ↗</a><button type="button" data-watch-buy="${escapeHTML(symbol)}">Record purchase</button></div>`;
+    return card;
+  }
+
+  const price = finite(stock.price);
+  const day = change(price, finite(stock.previousClose));
+  const week = change(price, finite(stock.weekAgoClose));
+  const score = momentumScore(day.percent, week.percent);
+  const scoreClass = score >= 65 ? "high" : score < 40 ? "low" : "";
+  const pre = finite(stock.premarketPrice);
+  const after = finite(stock.afterHoursPrice);
+  const extended = [];
+  if (pre) extended.push(`Pre ${percent(change(pre, finite(stock.previousClose)).percent)}`);
+  if (after) extended.push(`After ${percent(change(after, finite(stock.regularPrice)).percent)}`);
+  if (!extended.length) extended.push("Regular session");
+  card.innerHTML = `
+    <div class="watch-card-top">
+      <div><strong>${escapeHTML(symbol)}</strong><span>${escapeHTML(stock.name || symbol)}</span></div>
+      <button class="watch-remove" type="button" data-unwatch="${escapeHTML(symbol)}" aria-label="Remove ${escapeHTML(symbol)} from watchlist">×</button>
+    </div>
+    <div class="watch-price-row">
+      <div><span>Current</span><strong>${money(price, stock.currency)}</strong></div>
+      <canvas class="watch-sparkline" aria-label="Seven-session ${escapeHTML(symbol)} price trend" role="img"></canvas>
+      <span class="score-pill ${scoreClass}" title="Momentum score">${score ?? "—"} pts</span>
+    </div>
+    <div class="watch-metrics">
+      <span>Today <strong class="${classFor(day.percent)}">${percent(day.percent)}</strong></span>
+      <span>Week <strong class="${classFor(week.percent)}">${percent(week.percent)}</strong></span>
+      <span>${escapeHTML(extended.join(" · "))}</span>
+    </div>
+    <div class="watch-actions"><span>Not included in portfolio</span><button type="button" data-watch-buy="${escapeHTML(symbol)}">Record purchase</button></div>`;
+  requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), stock.sparkline || [], (state.period === "day" ? day.percent : week.percent) >= 0));
+  return card;
+}
+
+function renderWatchlist(lookup) {
+  elements.watchGrid.replaceChildren();
+  if (!state.watchlist.length) {
+    elements.watchGrid.innerHTML = '<div class="watch-empty"><strong>No stocks under consideration.</strong><span>Add a ticker above without changing your portfolio.</span></div>';
+  } else {
+    state.watchlist.forEach((symbol) => elements.watchGrid.appendChild(renderWatchStock(symbol, lookup.get(symbol))));
+  }
+  const count = state.watchlist.length;
+  elements.watchCount.textContent = `${count} watched`;
+}
+
 function renderSummary(rows) {
   const valid = rows.filter((row) => Number.isFinite(finite(row.stock?.price)));
   let marketValue = 0;
@@ -482,7 +560,35 @@ function render() {
   }
   const count = state.holdings.length;
   elements.count.textContent = `${count} ${count === 1 ? "holding" : "holdings"}`;
+  renderWatchlist(lookup);
   renderSummary(rows);
+}
+
+function addWatch(event) {
+  event.preventDefault();
+  const symbol = elements.watchInput.value.trim().toUpperCase();
+  elements.watchNote.classList.remove("error");
+  if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)) {
+    elements.watchNote.textContent = "Use a valid ticker such as AAPL or BRK.B.";
+    elements.watchNote.classList.add("error");
+    return;
+  }
+  if (state.holdings.some((item) => item.symbol === symbol)) {
+    elements.watchNote.textContent = `${symbol} is already in your portfolio.`;
+    elements.watchNote.classList.add("error");
+    return;
+  }
+  if (state.watchlist.includes(symbol)) {
+    elements.watchNote.textContent = `${symbol} is already on your watchlist.`;
+    elements.watchNote.classList.add("error");
+    return;
+  }
+  state.watchlist.push(symbol);
+  persistWatchlist();
+  elements.watchForm.reset();
+  const covered = state.data?.symbols.some((item) => item.symbol === symbol);
+  elements.watchNote.textContent = covered ? `${symbol} added to your watchlist.` : `${symbol} saved locally; sync it on GitHub for market updates.`;
+  if (state.data) render();
 }
 
 function addHolding(event) {
@@ -505,8 +611,10 @@ function addHolding(event) {
   const existing = state.holdings.find((item) => item.symbol === symbol);
   if (existing) existing.lots.push(lot);
   else state.holdings.push({ symbol, lots: [lot] });
+  state.watchlist = state.watchlist.filter((item) => item !== symbol);
   state.openLots.add(symbol);
   persistHoldings();
+  persistWatchlist();
   elements.form.reset();
   elements.shares.value = "1";
   const covered = state.data.symbols.some((item) => item.symbol === symbol);
@@ -517,6 +625,28 @@ function addHolding(event) {
 
 elements.form.addEventListener("submit", addHolding);
 elements.ticker.addEventListener("input", () => { elements.ticker.value = elements.ticker.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""); });
+elements.watchForm.addEventListener("submit", addWatch);
+elements.watchInput.addEventListener("input", () => { elements.watchInput.value = elements.watchInput.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""); });
+
+elements.watchGrid.addEventListener("click", (event) => {
+  const removeButton = event.target.closest("[data-unwatch]");
+  if (removeButton) {
+    state.watchlist = state.watchlist.filter((symbol) => symbol !== removeButton.dataset.unwatch);
+    persistWatchlist();
+    elements.watchNote.classList.remove("error");
+    elements.watchNote.textContent = `${removeButton.dataset.unwatch} removed from your watchlist.`;
+    render();
+    return;
+  }
+  const buyButton = event.target.closest("[data-watch-buy]");
+  if (!buyButton) return;
+  const symbol = buyButton.dataset.watchBuy;
+  elements.ticker.value = symbol;
+  elements.formNote.classList.remove("error");
+  elements.formNote.textContent = `Enter shares and price paid to move ${symbol} into your portfolio.`;
+  document.querySelector("#add-heading").scrollIntoView({ behavior: "smooth", block: "start" });
+  window.setTimeout(() => elements.shares.focus(), 450);
+});
 
 elements.grid.addEventListener("toggle", (event) => {
   const details = event.target.closest("[data-lots-panel]");
@@ -596,7 +726,9 @@ fetch(`./data/market.json?v=${Date.now()}`)
   .then((data) => {
     state.data = data;
     state.holdings = loadHoldings(data.symbols || []);
+    state.watchlist = loadWatchlist();
     persistHoldings();
+    persistWatchlist();
     setSession(data.session);
     renderFreshness();
     render();

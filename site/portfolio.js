@@ -82,7 +82,21 @@
     return [...bySymbol.values()];
   }
 
-  const api = { finite, totalShares, pricedShares, costBasis, summarizeHolding, normalizeHoldings };
+  function normalizeWatchlist(saved, holdings = []) {
+    if (!Array.isArray(saved)) return [];
+    const held = new Set((holdings || []).map((item) => String(item?.symbol || "").trim().toUpperCase()));
+    const seen = new Set();
+    const normalized = [];
+    saved.forEach((item) => {
+      const symbol = String(typeof item === "string" ? item : item?.symbol || "").trim().toUpperCase();
+      if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol) || held.has(symbol) || seen.has(symbol)) return;
+      seen.add(symbol);
+      normalized.push(symbol);
+    });
+    return normalized;
+  }
+
+  const api = { finite, totalShares, pricedShares, costBasis, summarizeHolding, normalizeHoldings, normalizeWatchlist };
   root.TickerQuestPortfolio = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof window !== "undefined" ? window : globalThis);
