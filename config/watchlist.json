@@ -1,0 +1,9 @@
+[
+  { "symbol": "NVDA", "name": "NVIDIA" },
+  { "symbol": "META", "name": "Meta Platforms" },
+  { "symbol": "AMD", "name": "Advanced Micro Devices" },
+  { "symbol": "MSFT", "name": "Microsoft" },
+  { "symbol": "GOOG", "name": "Alphabet" },
+  { "symbol": "TSM", "name": "Taiwan Semiconductor" },
+  { "symbol": "EOSE", "name": "Eos Energy Enterprises" }
+]
