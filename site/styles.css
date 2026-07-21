@@ -144,7 +144,7 @@ h1, h2, h3, p { text-wrap: pretty; }
 .portfolio { padding-bottom: 72px; }
 .section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 24px; }
 .section-heading .eyebrow { margin-bottom: 10px; }
-.section-heading h2, .method h2, .add-investment h2 { margin: 0; font-size: clamp(32px, 4vw, 50px); line-height: 0.98; letter-spacing: -0.055em; }
+.section-heading h2, .add-investment h2 { margin: 0; font-size: clamp(32px, 4vw, 50px); line-height: 0.98; letter-spacing: -0.055em; }
 .period-switch { display: inline-flex; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: rgba(251, 250, 245, 0.72); }
 .period-button { min-width: 72px; padding: 8px 13px; border: 0; border-radius: 999px; background: transparent; color: #68736f; font-size: 11px; font-weight: 780; cursor: pointer; }
 .period-button.active { background: var(--ink); color: white; }
@@ -205,7 +205,7 @@ h1, h2, h3, p { text-wrap: pretty; }
 .empty-state { grid-column: 1 / -1; padding: 54px 20px; border: 1px dashed var(--line); border-radius: 20px; text-align: center; color: #68736f; font-size: 12px; }
 .empty-state strong { display: block; margin-bottom: 7px; color: var(--ink); font-size: 20px; }
 
-.game-strip { padding-bottom: 72px; }
+.game-strip { padding-bottom: 48px; }
 .dark-card { position: relative; overflow: hidden; border-radius: 22px; background: var(--ink); color: white; box-shadow: 0 20px 48px rgba(7, 17, 15, 0.14); }
 .quest-card { min-height: 0; padding: 24px; display: grid; grid-template-columns: 1fr auto; gap: 36px; align-items: center; }
 .quest-topline { display: flex; justify-content: space-between; gap: 20px; }
@@ -218,13 +218,6 @@ h1, h2, h3, p { text-wrap: pretty; }
 .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 .badge { padding: 7px 9px; border: 1px solid var(--white-line); border-radius: 99px; background: rgba(255,255,255,0.06); color: #c7d0cd; font-size: 8px; font-weight: 820; letter-spacing: 0.07em; text-transform: uppercase; }
 .badge.unlocked { background: var(--mint); color: var(--ink); border-color: var(--mint); }
-
-.method { display: grid; grid-template-columns: 0.8fr 1.2fr; gap: 64px; padding-block: 62px 74px; border-top: 1px solid var(--line); }
-.method-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.method-grid article { padding-top: 14px; border-top: 1px solid var(--line); }
-.method-number { font-size: 9px; font-weight: 850; color: var(--mint-deep); }
-.method-grid h3 { margin: 24px 0 7px; font-size: 15px; letter-spacing: -0.03em; }
-.method-grid p { margin: 0; color: #6e7975; font-size: 11px; line-height: 1.5; }
 
 .add-investment { margin-bottom: 72px; padding: 30px; display: grid; grid-template-columns: 0.55fr 1.45fr; gap: 48px; align-items: center; border: 1px solid var(--line); border-radius: 24px; background: rgba(251, 250, 245, 0.78); }
 .add-copy > p:last-child { max-width: 370px; margin: 14px 0 0; color: #68736f; font-size: 12px; line-height: 1.5; }
@@ -251,7 +244,6 @@ h1, h2, h3, p { text-wrap: pretty; }
   .score-orbit { width: 132px; height: 132px; padding: 11px; }
   .score-core { padding-top: 37px; }
   .score-number { font-size: 45px; }
-  .method { grid-template-columns: 1fr; gap: 36px; }
   .add-investment { grid-template-columns: 1fr; gap: 28px; }
 }
 
@@ -326,15 +318,10 @@ h1, h2, h3, p { text-wrap: pretty; }
   .add-lot-form > strong { grid-column: 1 / -1; }
   .add-lot-form button { grid-column: 1 / -1; }
 
-  .game-strip { padding-bottom: 46px; }
+  .game-strip { padding-bottom: 30px; }
   .quest-card { padding: 17px; grid-template-columns: 1fr; gap: 16px; }
   .quest-card h2 { font-size: 19px; }
   .badges { justify-content: flex-start; }
-
-  .method { padding-block: 42px 48px; gap: 28px; }
-  .method h2 { font-size: 30px; }
-  .method-grid { grid-template-columns: 1fr; gap: 18px; }
-  .method-grid h3 { margin-top: 12px; }
 
   .add-investment { width: 100%; margin-bottom: 0; padding: 28px 18px 34px; border-inline: 0; border-radius: 0; }
   .add-investment h2 { font-size: 31px; }
