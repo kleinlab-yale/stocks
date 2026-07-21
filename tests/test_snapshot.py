@@ -3,6 +3,7 @@ import json
 import sys
 import types
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -59,6 +60,17 @@ class SnapshotTests(unittest.TestCase):
         category, signal = module.headline_signal("University honors faculty with annual awards")
         self.assertEqual(category, "Markets")
         self.assertEqual(signal, 0)
+
+        now = datetime.now(timezone.utc)
+        result = module.score_news_records(
+            [
+                {"title": "Pearl Harbor museum opens World War II exhibit", "url": "https://example.com/history", "published": now},
+                {"title": "Nvidia surges on AI chip demand", "url": "https://example.com/markets", "published": now},
+            ],
+            now,
+            "Test",
+        )
+        self.assertEqual(result["articleCount"], 1)
 
 
 if __name__ == "__main__":

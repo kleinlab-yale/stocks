@@ -48,6 +48,7 @@ NEGATIVE_TERMS = (
     "missile", "probe", "recession", "restrict", "sanction", "slump", "tariff", "threat",
     "war", "warning", "weak",
 )
+IRRELEVANT_NEWS_TERMS = ("world war ii", "pearl harbor", "civil war history", "war museum", "war anniversary")
 
 
 def number(value: Any) -> float | None:
@@ -122,7 +123,7 @@ def score_news_records(records: list[dict[str, Any]], now_utc: datetime, source:
             continue
         recency = 0.5 ** (age_hours / 8)
         category, signal = headline_signal(title)
-        if category == "Markets":
+        if category == "Markets" or any(term in title.lower() for term in IRRELEVANT_NEWS_TERMS):
             continue
         weighted_signal += signal * recency
         total_weight += recency
