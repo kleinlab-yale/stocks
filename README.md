@@ -1,6 +1,6 @@
 # TickerQuest
 
-A free, static portfolio scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily and weekly momentum into a transparent 0–100 score.
+A free, static portfolio scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily, weekly, and overnight signals into transparent 0–100 scores.
 
 ## Change the tracked tickers
 
@@ -51,9 +51,19 @@ Each stock receives a momentum score:
 
 The portfolio score is weighted by each holding's current market value. Total return uses only the purchase lots with a recorded price and clearly reports partial cost coverage when some historical prices are still missing. Scores are descriptive game mechanics, not predictions or investment recommendations.
 
+The Overnight Pulse combines three components:
+
+```text
+50% portfolio pre-market/after-hours movement
+25% latest Nikkei, Hang Seng, Shanghai, KOSPI, and Taiwan index movement
+25% time-decayed headline signal from an 18-hour GDELT news scan
+```
+
+The headline scan groups market-relevant coverage into geopolitics, policy, and AI/chips. It can capture reporting about major political or social-media statements, including Trump posts, but does not claim to be a direct or complete archive of any social network.
+
 ## Data and limitations
 
-The updater uses the open-source `yfinance` package and public Yahoo Finance endpoints. It needs no API key, but it is unofficial and intended for personal/research use. Quotes can be delayed, corrected, unavailable, or temporarily blocked. The page always shows its last update time and degrades to the last successful snapshot.
+The updater uses the open-source `yfinance` package and public Yahoo Finance endpoints for prices, plus the GDELT DOC 2.0 API for recent news coverage. Neither requires an API key. Quotes and news can be delayed, corrected, unavailable, rate-limited, or incomplete. When a component is missing, the page labels the Overnight Pulse as partial instead of manufacturing a signal. The page always shows its last update time.
 
 ## License
 

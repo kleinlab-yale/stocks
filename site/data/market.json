@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-07-21T19:01:34.791455Z",
+  "generatedAt": "2026-07-21T20:20:32.707142Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
   "session": {
-    "label": "Market open",
+    "label": "After hours",
     "timezone": "America/New_York"
   },
   "symbols": [
@@ -12,12 +12,12 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "price": 206.99,
-      "regularPrice": 206.99,
+      "price": 206.9828,
+      "regularPrice": 207.18,
       "previousClose": 203.28,
       "weekAgoClose": 211.8,
       "premarketPrice": 207.5,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 206.9828,
       "sparkline": [
         203.53,
         211.8,
@@ -25,7 +25,8 @@
         207.4,
         202.81,
         203.28,
-        206.99
+        207.29,
+        206.9828
       ],
       "status": "ok"
     },
@@ -33,12 +34,12 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "price": 646.665,
-      "regularPrice": 646.665,
+      "price": 642.258,
+      "regularPrice": 643.44,
       "previousClose": 645.85,
       "weekAgoClose": 661.04,
       "premarketPrice": 654.29,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 642.258,
       "sparkline": [
         656.73,
         661.04,
@@ -46,7 +47,8 @@
         664.54,
         646.01,
         645.85,
-        646.665
+        643.81,
+        642.258
       ],
       "status": "ok"
     },
@@ -54,12 +56,12 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "price": 543.06,
-      "regularPrice": 543.06,
+      "price": 545.09,
+      "regularPrice": 544.439,
       "previousClose": 503.57,
       "weekAgoClose": 548.13,
       "premarketPrice": 525.22,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 545.09,
       "sparkline": [
         534.39,
         548.13,
@@ -67,7 +69,8 @@
         500.94,
         495.76,
         503.57,
-        543.06
+        544.43,
+        545.09
       ],
       "status": "ok"
     },
@@ -75,12 +78,12 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "price": 398.24,
-      "regularPrice": 398.24,
+      "price": 397.4,
+      "regularPrice": 397.64,
       "previousClose": 402.29,
       "weekAgoClose": 384.93,
       "premarketPrice": 398.9616,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 397.4,
       "sparkline": [
         390.99,
         384.93,
@@ -88,7 +91,8 @@
         401.1,
         393.82,
         402.29,
-        398.24
+        397.75,
+        397.4
       ],
       "status": "ok"
     },
@@ -96,12 +100,12 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "price": 347.9,
-      "regularPrice": 347.9,
+      "price": 346.55,
+      "regularPrice": 346.19,
       "previousClose": 351.37,
       "weekAgoClose": 357.33,
       "premarketPrice": 350.56,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 346.55,
       "sparkline": [
         350.67,
         357.33,
@@ -109,7 +113,8 @@
         353.81,
         346.12,
         351.37,
-        347.9
+        346.19,
+        346.55
       ],
       "status": "ok"
     },
@@ -117,12 +122,12 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "price": 424.53,
-      "regularPrice": 424.53,
+      "price": 424.75,
+      "regularPrice": 424.485,
       "previousClose": 402.3,
       "weekAgoClose": 420.39,
       "premarketPrice": 417.7,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 424.75,
       "sparkline": [
         421.58,
         420.39,
@@ -130,8 +135,8 @@
         409.74,
         398.37,
         402.3,
-        424.445,
-        424.53
+        424.61,
+        424.75
       ],
       "status": "ok"
     },
@@ -139,12 +144,12 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "price": 4.14,
-      "regularPrice": 4.14,
+      "price": 4.23,
+      "regularPrice": 4.25,
       "previousClose": 4.06,
       "weekAgoClose": 4.29,
       "premarketPrice": 4.13,
-      "afterHoursPrice": null,
+      "afterHoursPrice": 4.23,
       "sparkline": [
         4.35,
         4.29,
@@ -152,10 +157,116 @@
         3.96,
         4.13,
         4.06,
-        4.14
+        4.24,
+        4.23
       ],
       "status": "ok"
     }
   ],
+  "overnight": {
+    "generatedAt": "2026-07-21T20:20:32.707142Z",
+    "status": "ok",
+    "asia": {
+      "status": "ok",
+      "score": 36,
+      "averageChangePercent": -0.99,
+      "markets": [
+        {
+          "symbol": "^N225",
+          "name": "Nikkei 225",
+          "price": 64141.12,
+          "changePercent": -4.03,
+          "status": "ok"
+        },
+        {
+          "symbol": "^HSI",
+          "name": "Hang Seng",
+          "price": 25143.05,
+          "changePercent": 2.36,
+          "status": "ok"
+        },
+        {
+          "symbol": "000001.SS",
+          "name": "Shanghai",
+          "price": 3796.28,
+          "changePercent": 0.85,
+          "status": "ok"
+        },
+        {
+          "symbol": "^KS11",
+          "name": "KOSPI",
+          "price": 6516.27,
+          "changePercent": -4.46,
+          "status": "ok"
+        },
+        {
+          "symbol": "^TWII",
+          "name": "Taiwan",
+          "price": 42449.7,
+          "changePercent": -0.52,
+          "status": "ok"
+        }
+      ],
+      "source": "Yahoo Finance via yfinance"
+    },
+    "news": {
+      "status": "ok",
+      "score": 47,
+      "articleCount": 16,
+      "windowHours": 18,
+      "stories": [
+        {
+          "title": "SpaceX eyes multibillion - dollar Pentagon AI computing deal",
+          "url": "http://www.zimbabwestar.com/news/279196147/spacex-eyes-multibillion-dollar-pentagon-ai-computing-deal",
+          "source": "zimbabwestar.com",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "AI & chips",
+          "tone": "positive"
+        },
+        {
+          "title": "Business Watch : BASF warns about Iran War ; Kira merges with struggling Jasper",
+          "url": "https://cen.acs.org/business/business-watch-basf-warns-about-iran-war-kira-merges-jasper/104/web/2026/07",
+          "source": "cen.acs.org",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Hegseth is facing questions from senators over funding for the Iran war",
+          "url": "https://www.bangordailynews.com/2026/07/21/nation/hegseth-is-facing-questions-from-senators-over-funding-for-the-iran-war/",
+          "source": "bangordailynews.com",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Protests erupt as Hegseth testifies before Congress as Trump requests billions for war",
+          "url": "https://www.rawstory.com/pete-hegseth-protests-iran-war/",
+          "source": "rawstory.com",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Brownsburg man preserves his father World War II experiences in a new book",
+          "url": "https://www.washtimesherald.com/indiana/news/brownsburg-man-preserves-his-fathers-world-war-ii-experiences-in-a-new-book/article_71c23e4d-5219-59b1-8c2a-32c48f0b2e86.html",
+          "source": "washtimesherald.com",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "AI stocks lead Wall Street higher , even as Brent oil price nears $92",
+          "url": "http://www.rockymounttelegram.com/news/world/ai-stocks-lead-wall-street-higher-even-as-brent-oils-price-nears-92/article_040db3ae-82a0-5b88-b70f-05b64f98c502.html",
+          "source": "rockymounttelegram.com",
+          "seenAt": "2026-07-21T20:00:00Z",
+          "category": "AI & chips",
+          "tone": "mixed"
+        }
+      ],
+      "source": "GDELT DOC 2.0"
+    },
+    "method": "Portfolio extended hours 50% \u00b7 Asian markets 25% \u00b7 overnight news 25%"
+  },
   "errors": []
 }

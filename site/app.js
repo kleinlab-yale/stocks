@@ -36,6 +36,17 @@ const elements = {
   weekPnlPercent: document.querySelector("#week-pnl-percent"),
   weekSignal: document.querySelector("#week-signal"),
   costCoverageFill: document.querySelector("#cost-coverage-fill"),
+  overnightStatus: document.querySelector("#overnight-status"),
+  overnightScore: document.querySelector("#overnight-score"),
+  overnightLabel: document.querySelector("#overnight-label"),
+  overnightCopy: document.querySelector("#overnight-copy"),
+  overnightPortfolio: document.querySelector("#overnight-portfolio"),
+  overnightPortfolioMove: document.querySelector("#overnight-portfolio-move"),
+  overnightAsia: document.querySelector("#overnight-asia"),
+  overnightAsiaMove: document.querySelector("#overnight-asia-move"),
+  overnightNews: document.querySelector("#overnight-news"),
+  overnightNewsCount: document.querySelector("#overnight-news-count"),
+  overnightStories: document.querySelector("#overnight-stories"),
   updatedTime: document.querySelector("#updated-time"),
   source: document.querySelector("#source-label"),
   count: document.querySelector("#holding-count"),
@@ -54,6 +65,15 @@ function newLotId() {
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+}
+
+function safeURL(value) {
+  try {
+    const url = new URL(String(value));
+    return ["http:", "https:"].includes(url.protocol) ? url.href : "#";
+  } catch (_) {
+    return "#";
+  }
 }
 
 function money(value, currency = "USD", signed = false) {
@@ -94,6 +114,14 @@ function scoreTier(score) {
   if (score >= 45) return ["Holding steady", "Your daily and weekly signals are balanced."];
   if (score >= 30) return ["Rebuild mode", "Momentum is soft; the next session can reset the board."];
   return ["Reset zone", "Short- and medium-term momentum are under pressure."];
+}
+
+function overnightTier(score) {
+  if (score >= 70) return "Risk-on setup";
+  if (score >= 58) return "Constructive setup";
+  if (score >= 43) return "Mixed setup";
+  if (score >= 30) return "Defensive setup";
+  return "Risk-off setup";
 }
 
 function classFor(value) {
@@ -188,6 +216,64 @@ function aggregatePortfolioTrend(rows) {
     const sourceIndex = Math.max(0, index - (length - row.values.length));
     return total + row.values[sourceIndex] * row.shares;
   }, 0));
+}
+
+function extendedHoursSignal(rows) {
+  const session = state.data.session?.label || "";
+  let basis = 0;
+  let movement = 0;
+  let observations = 0;
+  rows.forEach(({ holding, stock }) => {
+    if (!stock) return;
+    const premarket = finite(stock.premarketPrice);
+    const afterHours = finite(stock.afterHoursPrice);
+    const usePremarket = session === "Pre-market" || (!afterHours && premarket);
+    const extendedPrice = usePremarket ? premarket : afterHours || premarket;
+    const reference = usePremarket ? finite(stock.previousClose) : finite(stock.regularPrice) || finite(stock.previousClose);
+    const shares = Portfolio.totalShares(holding);
+    if (!extendedPrice || !reference || !shares) return;
+    basis += reference * shares;
+    movement += (extendedPrice - reference) * shares;
+    observations += 1;
+  });
+  const changePercent = basis > 0 ? (movement / basis) * 100 : null;
+  const score = changePercent === null ? 50 : Math.round(Math.max(0, Math.min(100, 50 + 30 * Math.tanh(changePercent / 2))));
+  return { score, changePercent, observations };
+}
+
+function renderOvernight(rows) {
+  const overnight = state.data.overnight || {};
+  const portfolio = extendedHoursSignal(rows);
+  const asia = overnight.asia || {};
+  const news = overnight.news || {};
+  const asiaScore = Number.isFinite(finite(asia.score)) ? finite(asia.score) : 50;
+  const newsScore = Number.isFinite(finite(news.score)) ? finite(news.score) : 50;
+  const composite = Math.round(0.5 * portfolio.score + 0.25 * asiaScore + 0.25 * newsScore);
+  const stories = Array.isArray(news.stories) ? news.stories.slice(0, 2) : [];
+  const articleCount = Number.isFinite(finite(news.articleCount)) ? finite(news.articleCount) : 0;
+  const asiaMove = finite(asia.averageChangePercent);
+  const available = portfolio.observations > 0 || overnight.status === "ok" || overnight.status === "partial";
+
+  elements.overnightScore.textContent = available ? composite : "—";
+  elements.overnightScore.className = classFor(composite - 50);
+  elements.overnightLabel.textContent = available ? overnightTier(composite) : "Overnight inputs unavailable";
+  elements.overnightCopy.textContent = available
+    ? `Holdings ${percent(portfolio.changePercent)} extended · Asia ${percent(asiaMove)} · ${articleCount} recent stories. Not a forecast.`
+    : "The next scheduled snapshot will retry the overnight sources.";
+  elements.overnightPortfolio.textContent = portfolio.observations ? portfolio.score : "—";
+  elements.overnightPortfolio.className = classFor(portfolio.score - 50);
+  elements.overnightPortfolioMove.textContent = portfolio.changePercent === null ? "No extended quote" : `${percent(portfolio.changePercent)} extended`;
+  elements.overnightAsia.textContent = asia.status === "unavailable" || !overnight.asia ? "—" : asiaScore;
+  elements.overnightAsia.className = classFor(asiaScore - 50);
+  elements.overnightAsiaMove.textContent = asiaMove === null ? "Asia unavailable" : `${percent(asiaMove)} weighted`;
+  elements.overnightNews.textContent = news.status === "unavailable" || !overnight.news ? "—" : newsScore;
+  elements.overnightNews.className = classFor(newsScore - 50);
+  elements.overnightNewsCount.textContent = articleCount ? `${articleCount} stories / 18h` : "News scan unavailable";
+  elements.overnightStatus.textContent = overnight.status === "ok" ? "Fresh" : available ? "Partial" : "Waiting";
+  elements.overnightStatus.className = `data-badge ${overnight.status === "ok" ? "live" : "degraded"}`;
+  elements.overnightStories.innerHTML = stories.length
+    ? stories.map((story) => `<li><span class="story-tag">${escapeHTML(story.category || "Driver")}</span><a href="${escapeHTML(safeURL(story.url))}" target="_blank" rel="noopener noreferrer">${escapeHTML(story.title || "Open story")} · ${escapeHTML(story.source || "Source")}</a></li>`).join("")
+    : "<li>News scan unavailable; market components still contribute to the score.</li>";
 }
 
 function lotsPanel(holding, currency = "USD") {
@@ -366,6 +452,7 @@ function renderSummary(rows) {
   elements.costCoverageFill.style.width = `${allShares > 0 ? Math.min(100, (coveredShares / allShares) * 100) : 0}%`;
   const trend = aggregatePortfolioTrend(rows);
   requestAnimationFrame(() => drawSparkline(elements.portfolioSparkline, trend, trend.length < 2 || trend.at(-1) >= trend[0]));
+  renderOvernight(rows);
   elements.questCount.textContent = `${weeklyWinners} / ${valid.length}`;
   elements.questFill.style.width = `${questPercent}%`;
   elements.questCopy.textContent = valid.length ? `${weeklyWinners} of ${valid.length} positions are above their weekly line.` : "Positive weekly momentum earns the Weekly Winner badge.";
