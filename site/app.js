@@ -19,6 +19,7 @@ const elements = {
   scoreOrbit: document.querySelector("#score-orbit"),
   scoreRank: document.querySelector("#score-rank"),
   scoreNote: document.querySelector("#score-note"),
+  portfolioSparkline: document.querySelector("#portfolio-sparkline"),
   xpFill: document.querySelector("#xp-fill"),
   xpLabel: document.querySelector("#xp-label"),
   level: document.querySelector("#level-label"),
@@ -29,7 +30,12 @@ const elements = {
   costBasis: document.querySelector("#cost-basis"),
   costCoverage: document.querySelector("#cost-coverage"),
   dayPnl: document.querySelector("#day-pnl"),
+  dayPnlPercent: document.querySelector("#day-pnl-percent"),
+  daySignal: document.querySelector("#day-signal"),
   weekPnl: document.querySelector("#week-pnl"),
+  weekPnlPercent: document.querySelector("#week-pnl-percent"),
+  weekSignal: document.querySelector("#week-signal"),
+  costCoverageFill: document.querySelector("#cost-coverage-fill"),
   updatedTime: document.querySelector("#updated-time"),
   source: document.querySelector("#source-label"),
   count: document.querySelector("#holding-count"),
@@ -143,9 +149,10 @@ function drawSparkline(canvas, values, positive) {
   const span = max - min || 1;
   const x = (index) => 2 + (index / (points.length - 1)) * (width - 4);
   const y = (value) => height - 4 - ((value - min) / span) * (height - 8);
-  const color = positive ? "#5bb82b" : "#df654e";
+  const isPortfolio = canvas.id === "portfolio-sparkline";
+  const color = positive ? (isPortfolio ? "#b8ff65" : "#5bb82b") : (isPortfolio ? "#ff8a70" : "#df654e");
   const gradient = ctx.createLinearGradient(0, 0, 0, height);
-  gradient.addColorStop(0, positive ? "rgba(117,214,59,.22)" : "rgba(255,138,112,.2)");
+  gradient.addColorStop(0, positive ? (isPortfolio ? "rgba(184,255,101,.3)" : "rgba(117,214,59,.22)") : "rgba(255,138,112,.2)");
   gradient.addColorStop(1, "rgba(255,255,255,0)");
   ctx.beginPath();
   ctx.moveTo(x(0), y(points[0]));
@@ -163,6 +170,24 @@ function drawSparkline(canvas, values, positive) {
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.stroke();
+}
+
+function aggregatePortfolioTrend(rows) {
+  const seriesRows = rows.flatMap(({ holding, stock }) => {
+    const price = finite(stock?.price);
+    const shares = Portfolio.totalShares(holding);
+    if (!price || !shares) return [];
+    const supplied = Array.isArray(stock.sparkline) ? stock.sparkline.map(Number).filter(Number.isFinite) : [];
+    const values = supplied.length >= 2 ? supplied : [finite(stock.previousClose) || price, price];
+    values[values.length - 1] = price;
+    return [{ shares, values }];
+  });
+  if (!seriesRows.length) return [];
+  const length = Math.max(...seriesRows.map((row) => row.values.length));
+  return Array.from({ length }, (_, index) => seriesRows.reduce((total, row) => {
+    const sourceIndex = Math.max(0, index - (length - row.values.length));
+    return total + row.values[sourceIndex] * row.shares;
+  }, 0));
 }
 
 function lotsPanel(holding, currency = "USD") {
@@ -274,6 +299,8 @@ function renderSummary(rows) {
   let coveredShares = 0;
   let dayPnl = 0;
   let weekPnl = 0;
+  let dayBasis = 0;
+  let weekBasis = 0;
   let weightedScore = 0;
   let scoreWeight = 0;
   let weeklyWinners = 0;
@@ -292,6 +319,8 @@ function renderSummary(rows) {
     coveredShares += performance.pricedShares;
     dayPnl += (day.amount || 0) * performance.shares;
     weekPnl += (week.amount || 0) * performance.shares;
+    if (finite(stock.previousClose) > 0) dayBasis += finite(stock.previousClose) * performance.shares;
+    if (finite(stock.weekAgoClose) > 0) weekBasis += finite(stock.weekAgoClose) * performance.shares;
     if ((week.percent || 0) > 0) weeklyWinners += 1;
     if ((day.percent || 0) > 0) dailyWinners += 1;
     if (score !== null) { weightedScore += score * performance.marketValue; scoreWeight += performance.marketValue; }
@@ -299,6 +328,8 @@ function renderSummary(rows) {
 
   const totalReturn = coveredShares ? pricedMarketValue - totalCost : null;
   const totalReturnPercent = totalReturn === null || totalCost <= 0 ? null : (totalReturn / totalCost) * 100;
+  const dayPnlPercent = dayBasis > 0 ? (dayPnl / dayBasis) * 100 : null;
+  const weekPnlPercent = weekBasis > 0 ? (weekPnl / weekBasis) * 100 : null;
   const score = scoreWeight ? Math.round(weightedScore / scoreWeight) : 0;
   const [rank, note] = scoreTier(score);
   const level = Math.max(1, Math.floor(score / 10) + 1);
@@ -324,6 +355,17 @@ function renderSummary(rows) {
   elements.weekPnl.textContent = money(weekPnl, "USD", true);
   elements.dayPnl.className = classFor(dayPnl);
   elements.weekPnl.className = classFor(weekPnl);
+  elements.dayPnlPercent.textContent = dayPnlPercent === null ? "Weighted P&L" : `${percent(dayPnlPercent)} weighted`;
+  elements.weekPnlPercent.textContent = weekPnlPercent === null ? "Weighted P&L" : `${percent(weekPnlPercent)} weighted`;
+  elements.dayPnlPercent.className = classFor(dayPnlPercent);
+  elements.weekPnlPercent.className = classFor(weekPnlPercent);
+  elements.daySignal.style.width = `${dayPnlPercent === null ? 0 : Math.min(100, Math.max(Math.abs(dayPnlPercent) * 18, 7))}%`;
+  elements.weekSignal.style.width = `${weekPnlPercent === null ? 0 : Math.min(100, Math.max(Math.abs(weekPnlPercent) * 12, 7))}%`;
+  elements.daySignal.className = classFor(dayPnlPercent);
+  elements.weekSignal.className = classFor(weekPnlPercent);
+  elements.costCoverageFill.style.width = `${allShares > 0 ? Math.min(100, (coveredShares / allShares) * 100) : 0}%`;
+  const trend = aggregatePortfolioTrend(rows);
+  requestAnimationFrame(() => drawSparkline(elements.portfolioSparkline, trend, trend.length < 2 || trend.at(-1) >= trend[0]));
   elements.questCount.textContent = `${weeklyWinners} / ${valid.length}`;
   elements.questFill.style.width = `${questPercent}%`;
   elements.questCopy.textContent = valid.length ? `${weeklyWinners} of ${valid.length} positions are above their weekly line.` : "Positive weekly momentum earns the Weekly Winner badge.";

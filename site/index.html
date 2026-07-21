@@ -35,56 +35,56 @@
 
     <main>
       <section class="overview shell" aria-labelledby="overview-heading">
-        <div class="overview-card">
-          <div class="overview-topline">
-            <div>
-              <p class="eyebrow"><span>Overall current status</span><span class="rule"></span><span id="freshness-badge" class="data-badge">Loading</span></p>
-              <h1 id="overview-heading">Portfolio overview</h1>
-            </div>
-            <div class="score-compact" aria-labelledby="score-heading">
-              <div class="score-orbit" id="score-orbit" style="--score: 0">
-                <div class="score-core">
-                  <span class="score-number" id="portfolio-score">—</span>
-                  <span class="score-max">/100</span>
-                </div>
-              </div>
-              <div>
-                <span class="tiny-label" id="score-heading">Momentum score</span>
-                <p class="score-rank" id="score-rank">Building score…</p>
-                <p class="score-note" id="score-note">Weighing daily and weekly momentum.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="summary-grid">
-            <div class="summary-primary">
+        <h1 class="visually-hidden" id="overview-heading">Portfolio overview</h1>
+        <div class="live-board" aria-label="Live portfolio overview">
+          <article class="board-cell board-market">
+            <div class="board-cell-heading">
               <span>Market value</span>
-              <strong id="market-value">—</strong>
-              <small id="position-count">Across — positions</small>
+              <span id="freshness-badge" class="data-badge">Loading</span>
             </div>
-            <div>
-              <span>Total return</span>
-              <strong id="total-return">—</strong>
-              <small id="total-return-percent">Add purchase prices</small>
-            </div>
-            <div>
-              <span>Today</span>
-              <strong id="day-pnl">—</strong>
-              <small>Weighted P&amp;L</small>
-            </div>
-            <div>
-              <span>This week</span>
-              <strong id="week-pnl">—</strong>
-              <small>Weighted P&amp;L</small>
-            </div>
-            <div>
-              <span>Cost basis</span>
-              <strong id="cost-basis">—</strong>
-              <small id="cost-coverage">No purchase prices yet</small>
-            </div>
-          </div>
+            <strong id="market-value">—</strong>
+            <small id="position-count">Across — positions</small>
+            <canvas id="portfolio-sparkline" class="portfolio-sparkline" aria-label="Portfolio value trend" role="img"></canvas>
+          </article>
 
-          <div class="overview-footer">
+          <article class="board-cell board-score" aria-labelledby="score-heading">
+            <span class="board-label" id="score-heading">Momentum score</span>
+            <div class="score-orbit" id="score-orbit" style="--score: 0">
+              <div class="score-core">
+                <span class="score-number" id="portfolio-score">—</span>
+                <span class="score-max">/100</span>
+              </div>
+            </div>
+            <p class="score-rank" id="score-rank">Building score…</p>
+            <p class="score-note" id="score-note">Weighing daily and weekly momentum.</p>
+          </article>
+
+          <article class="board-cell board-metric">
+            <span class="board-label">Total return</span>
+            <strong id="total-return">—</strong>
+            <small id="total-return-percent">Add purchase prices</small>
+          </article>
+          <article class="board-cell board-metric">
+            <span class="board-label">Daily</span>
+            <strong id="day-pnl">—</strong>
+            <small id="day-pnl-percent">Weighted P&amp;L</small>
+            <div class="signal-track" aria-hidden="true"><span id="day-signal"></span></div>
+          </article>
+          <article class="board-cell board-metric">
+            <span class="board-label">Weekly</span>
+            <strong id="week-pnl">—</strong>
+            <small id="week-pnl-percent">Weighted P&amp;L</small>
+            <div class="signal-track" aria-hidden="true"><span id="week-signal"></span></div>
+          </article>
+
+          <article class="board-cell board-cost">
+            <span class="board-label">Cost basis</span>
+            <strong id="cost-basis">—</strong>
+            <small id="cost-coverage">No purchase prices yet</small>
+            <div class="coverage-track" aria-hidden="true"><span id="cost-coverage-fill"></span></div>
+          </article>
+
+          <div class="board-footer">
             <div class="snapshot-line">
               <span class="tiny-label">Last snapshot</span>
               <strong id="updated-time">Loading…</strong>
