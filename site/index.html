@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#07110f" />
-    <meta name="description" content="A free daily and weekly portfolio momentum scorecard." />
-    <meta property="og:title" content="TickerQuest — Portfolio Momentum Scorecard" />
-    <meta property="og:description" content="Track the day, own the week, and level up your watchlist." />
-    <meta property="og:image" content="./og.png" />
+    <meta name="description" content="A free cost-basis-aware portfolio and momentum scorecard." />
+    <meta property="og:title" content="TickerQuest — Portfolio Scorecard" />
+    <meta property="og:description" content="Track cost basis, daily and weekly movement, and portfolio momentum." />
+    <meta property="og:image" content="./og-v2.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <title>TickerQuest — Portfolio Momentum Scorecard</title>
+    <title>TickerQuest — Portfolio Scorecard</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>↗</text></svg>" />
     <link rel="stylesheet" href="./styles.css" />
+    <script src="./portfolio.js" defer></script>
     <script src="./app.js" defer></script>
   </head>
   <body>
@@ -33,81 +34,76 @@
     </header>
 
     <main>
-      <section class="hero shell" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="eyebrow"><span>Portfolio game board</span><span class="rule"></span><span>v1.0</span></p>
-          <h1 id="hero-title">Track the day.<br /><em>Own the week.</em></h1>
-          <p class="hero-lede">A clean momentum score for the stocks you care about—regular session, pre-market, and after hours included.</p>
+      <section class="overview shell" aria-labelledby="overview-heading">
+        <div class="overview-card">
+          <div class="overview-topline">
+            <div>
+              <p class="eyebrow"><span>Overall current status</span><span class="rule"></span><span id="freshness-badge" class="data-badge">Loading</span></p>
+              <h1 id="overview-heading">Portfolio overview</h1>
+            </div>
+            <div class="score-compact" aria-labelledby="score-heading">
+              <div class="score-orbit" id="score-orbit" style="--score: 0">
+                <div class="score-core">
+                  <span class="score-number" id="portfolio-score">—</span>
+                  <span class="score-max">/100</span>
+                </div>
+              </div>
+              <div>
+                <span class="tiny-label" id="score-heading">Momentum score</span>
+                <p class="score-rank" id="score-rank">Building score…</p>
+                <p class="score-note" id="score-note">Weighing daily and weekly momentum.</p>
+              </div>
+            </div>
+          </div>
 
-          <form class="ticker-form" id="ticker-form">
-            <label class="field-group">
-              <span class="field-label">Stock ticker</span>
-              <input id="ticker-input" name="ticker" placeholder="AAPL" maxlength="10" autocomplete="off" spellcheck="false" aria-describedby="form-note" />
-            </label>
-            <label class="field-group shares-field">
-              <span class="field-label">Shares</span>
-              <input id="shares-input" name="shares" type="number" min="0.001" step="any" value="1" inputmode="decimal" />
-            </label>
-            <button class="primary-button" type="submit"><span>Add to quest</span><span aria-hidden="true">↗</span></button>
-          </form>
-          <p class="form-note" id="form-note" role="status">Your watchlist and share counts stay on this device.</p>
+          <div class="summary-grid">
+            <div class="summary-primary">
+              <span>Market value</span>
+              <strong id="market-value">—</strong>
+              <small id="position-count">Across — positions</small>
+            </div>
+            <div>
+              <span>Total return</span>
+              <strong id="total-return">—</strong>
+              <small id="total-return-percent">Add purchase prices</small>
+            </div>
+            <div>
+              <span>Today</span>
+              <strong id="day-pnl">—</strong>
+              <small>Weighted P&amp;L</small>
+            </div>
+            <div>
+              <span>This week</span>
+              <strong id="week-pnl">—</strong>
+              <small>Weighted P&amp;L</small>
+            </div>
+            <div>
+              <span>Cost basis</span>
+              <strong id="cost-basis">—</strong>
+              <small id="cost-coverage">No purchase prices yet</small>
+            </div>
+          </div>
+
+          <div class="overview-footer">
+            <div class="snapshot-line">
+              <span class="tiny-label">Last snapshot</span>
+              <strong id="updated-time">Loading…</strong>
+              <span id="source-label">Connecting to the market feed.</span>
+            </div>
+            <div class="xp-row">
+              <span id="level-label">Level —</span>
+              <div class="xp-track" aria-hidden="true"><span id="xp-fill"></span></div>
+              <span id="xp-label">— XP</span>
+            </div>
+          </div>
         </div>
-
-        <section class="score-card glass-card" aria-labelledby="score-heading">
-          <div class="card-kicker"><span id="score-heading">Portfolio pulse</span><span id="freshness-badge" class="data-badge">Loading</span></div>
-          <div class="score-layout">
-            <div class="score-orbit" id="score-orbit" style="--score: 0">
-              <div class="score-core">
-                <span class="score-number" id="portfolio-score">—</span>
-                <span class="score-max">/100</span>
-              </div>
-            </div>
-            <div class="score-copy">
-              <p class="score-rank" id="score-rank">Building score…</p>
-              <p class="score-note" id="score-note">Weighing daily and weekly momentum.</p>
-              <div class="xp-row">
-                <span id="level-label">Level —</span>
-                <div class="xp-track" aria-hidden="true"><span id="xp-fill"></span></div>
-                <span id="xp-label">— XP</span>
-              </div>
-            </div>
-          </div>
-          <div class="score-metrics">
-            <div><span>Market value</span><strong id="market-value">—</strong></div>
-            <div><span>Today</span><strong id="day-pnl">—</strong></div>
-            <div><span>This week</span><strong id="week-pnl">—</strong></div>
-          </div>
-        </section>
-      </section>
-
-      <section class="dashboard shell" aria-label="Portfolio dashboard">
-        <article class="quest-card dark-card">
-          <div class="quest-topline">
-            <span class="tiny-label">Today’s quest</span>
-            <span class="quest-count" id="quest-count">0 / 0</span>
-          </div>
-          <h2>Finish above your weekly line.</h2>
-          <p id="quest-copy">Positive weekly momentum earns the Weekly Winner badge.</p>
-          <div class="quest-progress"><span id="quest-fill"></span></div>
-          <div class="badges" id="badges" aria-label="Unlocked portfolio badges"></div>
-        </article>
-
-        <article class="update-card paper-card">
-          <div class="mini-clock" aria-hidden="true"><span></span></div>
-          <div>
-            <span class="tiny-label">Last snapshot</span>
-            <h2 id="updated-time">Loading…</h2>
-            <p id="source-label">Connecting to the market feed.</p>
-          </div>
-          <span class="cadence">15 min cadence</span>
-        </article>
       </section>
 
       <section class="portfolio shell" aria-labelledby="portfolio-heading">
         <div class="section-heading">
           <div>
-            <p class="eyebrow muted"><span>Your lineup</span><span class="rule"></span><span id="holding-count">0 holdings</span></p>
-            <h2 id="portfolio-heading">Momentum leaderboard</h2>
+            <p class="eyebrow muted"><span>Your portfolio</span><span class="rule"></span><span id="holding-count">0 holdings</span></p>
+            <h2 id="portfolio-heading">Positions</h2>
           </div>
           <div class="period-switch" role="group" aria-label="Rank stocks by period">
             <button class="period-button active" type="button" data-period="day">Today</button>
@@ -118,20 +114,58 @@
         <div class="stock-grid" id="stock-grid" aria-live="polite">
           <div class="skeleton-card"></div>
           <div class="skeleton-card"></div>
-          <div class="skeleton-card"></div>
         </div>
+      </section>
+
+      <section class="game-strip shell" aria-label="Portfolio game status">
+        <article class="quest-card dark-card">
+          <div class="quest-copy-block">
+            <div class="quest-topline">
+              <span class="tiny-label">This week’s quest</span>
+              <span class="quest-count" id="quest-count">0 / 0</span>
+            </div>
+            <h2>Finish above your weekly line.</h2>
+            <p id="quest-copy">Positive weekly momentum earns the Weekly Winner badge.</p>
+            <div class="quest-progress" aria-hidden="true"><span id="quest-fill"></span></div>
+          </div>
+          <div class="badges" id="badges" aria-label="Unlocked portfolio badges"></div>
+        </article>
       </section>
 
       <section class="method shell" aria-labelledby="method-heading">
         <div>
-          <p class="eyebrow muted"><span>How scoring works</span></p>
-          <h2 id="method-heading">Momentum, made legible.</h2>
+          <p class="eyebrow muted"><span>What the numbers mean</span></p>
+          <h2 id="method-heading">Performance and momentum, together.</h2>
         </div>
         <div class="method-grid">
-          <article><span class="method-number">01</span><h3>Start neutral</h3><p>Every stock begins at 50—the middle of the board.</p></article>
-          <article><span class="method-number">02</span><h3>Blend two horizons</h3><p>Daily and weekly percentage changes each contribute up to 25 points.</p></article>
-          <article><span class="method-number">03</span><h3>Weight your lineup</h3><p>Your portfolio score follows the current value of the shares you enter.</p></article>
+          <article><span class="method-number">01</span><h3>Track every purchase</h3><p>Separate lots preserve the shares and price paid for each historical buy.</p></article>
+          <article><span class="method-number">02</span><h3>See total return</h3><p>Cost basis and unrealized gain or loss are calculated from priced purchase lots.</p></article>
+          <article><span class="method-number">03</span><h3>Keep momentum</h3><p>Daily and weekly moves still drive the 0–100 game score, weighted by position value.</p></article>
         </div>
+      </section>
+
+      <section class="add-investment shell" aria-labelledby="add-heading">
+        <div class="add-copy">
+          <p class="eyebrow"><span>Add new stock</span></p>
+          <h2 id="add-heading">Record a purchase</h2>
+          <p>Enter the ticker, number of shares, and price paid. Adding an existing ticker creates another purchase lot.</p>
+        </div>
+        <form class="ticker-form" id="ticker-form">
+          <label class="field-group">
+            <span class="field-label">Stock ticker</span>
+            <input id="ticker-input" name="ticker" placeholder="AAPL" maxlength="10" autocomplete="off" spellcheck="false" aria-describedby="form-note" />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Shares bought</span>
+            <input id="shares-input" name="shares" type="number" min="0.001" step="any" value="1" inputmode="decimal" />
+          </label>
+          <label class="field-group">
+            <span class="field-label">Price paid</span>
+            <div class="money-input"><span aria-hidden="true">$</span><input id="price-input" name="price" type="number" min="0.001" step="any" placeholder="0.00" inputmode="decimal" required /></div>
+          </label>
+          <button class="primary-button" type="submit"><span>Add purchase</span><span aria-hidden="true">↗</span></button>
+          <p class="form-note" id="form-note" role="status">Your purchase history stays on this device.</p>
+        </form>
       </section>
     </main>
 
@@ -139,14 +173,5 @@
       <div><strong>TickerQuest</strong><span>Built for curious investors.</span></div>
       <p>Market data may be delayed. Scores are descriptive—not financial advice.</p>
     </footer>
-
-    <template id="pending-template">
-      <article class="stock-card pending-card">
-        <div class="pending-icon" aria-hidden="true">+</div>
-        <h3></h3>
-        <p>Added on this device. Add this symbol to the repository watchlist to include it in scheduled updates.</p>
-        <a href="https://github.com/kleinlab-yale/stocks/edit/main/config/watchlist.json">Sync on GitHub ↗</a>
-      </article>
-    </template>
   </body>
 </html>

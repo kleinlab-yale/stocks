@@ -1,10 +1,15 @@
-const STORAGE_KEY = "tickerquest:holdings:v1";
-const state = { data: null, holdings: [], period: "day" };
+const STORAGE_KEY = "tickerquest:holdings:v2";
+const LEGACY_STORAGE_KEY = "tickerquest:holdings:v1";
+const Portfolio = window.TickerQuestPortfolio;
+let lotSequence = 0;
+
+const state = { data: null, holdings: [], period: "day", openLots: new Set() };
 
 const elements = {
   form: document.querySelector("#ticker-form"),
   ticker: document.querySelector("#ticker-input"),
   shares: document.querySelector("#shares-input"),
+  price: document.querySelector("#price-input"),
   formNote: document.querySelector("#form-note"),
   grid: document.querySelector("#stock-grid"),
   sessionChip: document.querySelector("#session-chip"),
@@ -18,6 +23,11 @@ const elements = {
   xpLabel: document.querySelector("#xp-label"),
   level: document.querySelector("#level-label"),
   marketValue: document.querySelector("#market-value"),
+  positionCount: document.querySelector("#position-count"),
+  totalReturn: document.querySelector("#total-return"),
+  totalReturnPercent: document.querySelector("#total-return-percent"),
+  costBasis: document.querySelector("#cost-basis"),
+  costCoverage: document.querySelector("#cost-coverage"),
   dayPnl: document.querySelector("#day-pnl"),
   weekPnl: document.querySelector("#week-pnl"),
   updatedTime: document.querySelector("#updated-time"),
@@ -29,10 +39,11 @@ const elements = {
   badges: document.querySelector("#badges"),
 };
 
-function finite(value) {
-  if (value === null || value === undefined || value === "") return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
+const finite = Portfolio.finite;
+
+function newLotId() {
+  lotSequence += 1;
+  return `lot-${Date.now().toString(36)}-${lotSequence.toString(36)}`;
 }
 
 function escapeHTML(value) {
@@ -41,7 +52,11 @@ function escapeHTML(value) {
 
 function money(value, currency = "USD", signed = false) {
   if (!Number.isFinite(value)) return "—";
-  const formatted = new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0 }).format(Math.abs(value));
+  const formatted = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: Math.abs(value) < 100 ? 2 : 0,
+  }).format(Math.abs(value));
   if (!signed) return formatted;
   return `${value >= 0 ? "+" : "−"}${formatted}`;
 }
@@ -49,6 +64,11 @@ function money(value, currency = "USD", signed = false) {
 function percent(value) {
   if (!Number.isFinite(value)) return "—";
   return `${value >= 0 ? "+" : "−"}${Math.abs(value).toFixed(2)}%`;
+}
+
+function formatShares(value) {
+  if (!Number.isFinite(value)) return "—";
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 4 }).format(value);
 }
 
 function change(price, reference) {
@@ -75,14 +95,14 @@ function classFor(value) {
 }
 
 function loadHoldings(symbols) {
+  let saved = null;
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (Array.isArray(saved)) {
-      const clean = saved.filter((item) => /^[A-Z][A-Z0-9.-]{0,9}$/.test(item.symbol)).map((item) => ({ symbol: item.symbol, shares: Math.max(0.001, finite(item.shares) || 1) }));
-      return clean;
-    }
-  } catch (_) {}
-  return symbols.map((item) => ({ symbol: item.symbol, shares: 1 }));
+    saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (!Array.isArray(saved)) saved = JSON.parse(localStorage.getItem(LEGACY_STORAGE_KEY));
+  } catch (_) {
+    saved = null;
+  }
+  return Portfolio.normalizeHoldings(saved, symbols, newLotId);
 }
 
 function persistHoldings() {
@@ -105,7 +125,7 @@ function renderFreshness() {
   elements.freshness.textContent = badge;
   elements.freshness.className = `data-badge ${mode === "live" && !stale ? "live" : mode === "demo" ? "" : "degraded"}`;
   elements.updatedTime.textContent = Number.isNaN(generated.getTime()) ? "Time unavailable" : generated.toLocaleString([], { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  elements.source.textContent = mode === "demo" ? "Preview snapshot—scheduled updates start after publishing." : `${state.data.source}. ${ageMinutes} min old.`;
+  elements.source.textContent = mode === "demo" ? "Preview snapshot" : `${ageMinutes} min old · ${state.data.source}`;
 }
 
 function drawSparkline(canvas, values, positive) {
@@ -145,27 +165,65 @@ function drawSparkline(canvas, values, positive) {
   ctx.stroke();
 }
 
+function lotsPanel(holding, currency = "USD") {
+  const symbol = escapeHTML(holding.symbol);
+  const summary = Portfolio.summarizeHolding(holding, null);
+  const lotCount = holding.lots.length;
+  const needsPrice = summary.pricedShares < summary.shares;
+  const open = state.openLots.has(holding.symbol) ? " open" : "";
+  const rows = holding.lots.map((lot, index) => {
+    const lotCost = finite(lot.price) ? lot.shares * lot.price : null;
+    return `
+      <div class="lot-row">
+        <span class="lot-number">${String(index + 1).padStart(2, "0")}</span>
+        <label><span>Shares</span><input type="number" min="0.001" step="any" value="${lot.shares}" inputmode="decimal" aria-label="Shares in ${symbol} purchase ${index + 1}" data-lot-shares="${escapeHTML(lot.id)}" /></label>
+        <label><span>Price paid</span><div class="money-input compact"><span aria-hidden="true">$</span><input type="number" min="0.001" step="any" value="${lot.price ?? ""}" placeholder="0.00" inputmode="decimal" aria-label="Price paid for ${symbol} purchase ${index + 1}" data-lot-price="${escapeHTML(lot.id)}" /></div></label>
+        <div class="lot-cost"><span>Cost</span><strong>${money(lotCost, currency)}</strong></div>
+        <button class="lot-remove" type="button" aria-label="Remove ${symbol} purchase ${index + 1}" data-remove-lot="${escapeHTML(lot.id)}">Remove</button>
+      </div>`;
+  }).join("");
+
+  return `
+    <details class="lots-panel" data-lots-panel="${symbol}"${open}>
+      <summary><span>Purchase history</span><span>${lotCount} ${lotCount === 1 ? "lot" : "lots"} · ${needsPrice ? "Add price" : `${money(summary.averageCost, currency)} avg`}</span></summary>
+      <div class="lot-list">${rows}</div>
+      <form class="add-lot-form" data-add-lot="${symbol}">
+        <strong>Add another purchase</strong>
+        <label><span>Shares</span><input name="shares" type="number" min="0.001" step="any" value="1" inputmode="decimal" aria-label="Shares in new ${symbol} purchase" required /></label>
+        <label><span>Price paid</span><div class="money-input compact"><span aria-hidden="true">$</span><input name="price" type="number" min="0.001" step="any" placeholder="0.00" inputmode="decimal" aria-label="Price paid for new ${symbol} purchase" required /></div></label>
+        <button type="submit">Add lot</button>
+      </form>
+      <button class="remove-stock" type="button" data-remove-stock="${symbol}">Remove ${symbol} from portfolio</button>
+    </details>`;
+}
+
+function renderPendingStock(holding) {
+  const summary = Portfolio.summarizeHolding(holding, null);
+  const card = document.createElement("article");
+  card.className = "stock-card pending-card";
+  card.dataset.symbol = holding.symbol;
+  card.innerHTML = `
+    <div class="stock-top">
+      <div class="stock-symbol"><span class="ticker-avatar">${escapeHTML(holding.symbol.slice(0, 3))}</span><div><h3>${escapeHTML(holding.symbol)}</h3><p>Waiting for market data</p></div></div>
+      <span class="score-pill">— pts</span>
+    </div>
+    <div class="pending-copy"><strong>${formatShares(summary.shares)} shares saved</strong><p>Add this ticker to the repository watchlist to include it in scheduled quotes.</p><a href="https://github.com/kleinlab-yale/stocks/edit/main/config/watchlist.json">Sync on GitHub ↗</a></div>
+    ${lotsPanel(holding)}`;
+  return card;
+}
+
 function renderStock(holding, stock, totalValue) {
-  if (!stock || !Number.isFinite(finite(stock.price))) {
-    const template = document.querySelector("#pending-template");
-    const node = template.content.firstElementChild.cloneNode(true);
-    node.querySelector("h3").textContent = holding.symbol;
-    const controls = document.createElement("div");
-    controls.className = "holding-row";
-    controls.innerHTML = `<label class="share-editor">Shares <input type="number" min="0.001" step="any" value="${holding.shares}" aria-label="Shares of ${escapeHTML(holding.symbol)}" data-shares="${escapeHTML(holding.symbol)}" /></label><button class="remove-button" type="button" data-remove="${escapeHTML(holding.symbol)}">Remove</button>`;
-    node.appendChild(controls);
-    return node;
-  }
+  if (!stock || !Number.isFinite(finite(stock.price))) return renderPendingStock(holding);
 
   const price = finite(stock.price);
+  const performance = Portfolio.summarizeHolding(holding, price);
   const day = change(price, finite(stock.previousClose));
   const week = change(price, finite(stock.weekAgoClose));
   const score = momentumScore(day.percent, week.percent);
   const ranking = state.period === "day" ? day.percent : week.percent;
   const scoreClass = score >= 65 ? "high" : score < 40 ? "low" : "";
   const initials = stock.symbol.slice(0, 3);
-  const positionValue = price * holding.shares;
-  const portfolioWeight = totalValue > 0 ? (positionValue / totalValue) * 100 : 0;
+  const portfolioWeight = totalValue > 0 ? (performance.marketValue / totalValue) * 100 : 0;
   const extended = [];
   const pre = finite(stock.premarketPrice);
   const after = finite(stock.afterHoursPrice);
@@ -173,33 +231,36 @@ function renderStock(holding, stock, totalValue) {
   const afterMove = change(after, finite(stock.regularPrice)).percent;
   if (pre) extended.push(`<span class="extended-chip">Pre ${money(pre, stock.currency)} · ${percent(preMove)}</span>`);
   if (after) extended.push(`<span class="extended-chip">After ${money(after, stock.currency)} · ${percent(afterMove)}</span>`);
-  if (!extended.length) extended.push(`<span class="extended-chip">Regular session</span>`);
+  if (!extended.length) extended.push('<span class="extended-chip">Regular session</span>');
+  const returnLabel = performance.returnPercent === null ? "Add purchase price" : `${money(performance.unrealized, stock.currency, true)} unrealized`;
 
   const card = document.createElement("article");
   card.className = "stock-card";
+  card.dataset.symbol = holding.symbol;
   card.innerHTML = `
     <div class="stock-top">
       <div class="stock-symbol"><span class="ticker-avatar">${escapeHTML(initials)}</span><div><h3>${escapeHTML(stock.symbol)}</h3><p>${escapeHTML(stock.name || stock.symbol)}</p></div></div>
       <span class="score-pill ${scoreClass}" title="Momentum score">${score ?? "—"} pts</span>
     </div>
     <div class="price-row">
-      <div class="price-main"><span>Last price</span><strong>${money(price, stock.currency)}</strong></div>
+      <div class="price-main"><span>Current price</span><strong>${money(price, stock.currency)}</strong></div>
       <canvas class="sparkline" aria-label="Seven-session price trend" role="img"></canvas>
     </div>
     <div class="stock-metrics">
       <div class="stock-metric"><span class="metric-label">Today</span><strong class="${classFor(day.percent)}">${percent(day.percent)}</strong><small>${money(day.amount, stock.currency, true)} / share</small></div>
       <div class="stock-metric"><span class="metric-label">Week</span><strong class="${classFor(week.percent)}">${percent(week.percent)}</strong><small>${money(week.amount, stock.currency, true)} / share</small></div>
+      <div class="stock-metric return-metric"><span class="metric-label">Total return</span><strong class="${classFor(performance.returnPercent)}">${percent(performance.returnPercent)}</strong><small>${returnLabel}</small></div>
     </div>
     <div class="extended-row">${extended.join("")}</div>
-    <div class="weight-row">
-      <div><span>Position</span><strong>${money(positionValue, stock.currency)}</strong></div>
-      <div class="weight-copy"><span>Portfolio weight</span><strong>${portfolioWeight.toFixed(1)}%</strong></div>
+    <div class="position-grid">
+      <div><span>Position</span><strong>${money(performance.marketValue, stock.currency)}</strong></div>
+      <div><span>Shares</span><strong>${formatShares(performance.shares)}</strong></div>
+      <div><span>Weight</span><strong>${portfolioWeight.toFixed(1)}%</strong></div>
+      <div><span>Avg cost</span><strong>${money(performance.averageCost, stock.currency)}</strong></div>
+      <div><span>Cost basis</span><strong>${performance.costBasis ? money(performance.costBasis, stock.currency) : "—"}</strong></div>
       <div class="weight-track" aria-hidden="true"><span style="width:${Math.min(portfolioWeight, 100)}%"></span></div>
     </div>
-    <div class="holding-row">
-      <label class="share-editor">Shares <input type="number" min="0.001" step="any" value="${holding.shares}" aria-label="Shares of ${escapeHTML(stock.symbol)}" data-shares="${escapeHTML(stock.symbol)}" /></label>
-      <button class="remove-button" type="button" data-remove="${escapeHTML(stock.symbol)}">Remove</button>
-    </div>`;
+    ${lotsPanel(holding, stock.currency)}`;
   requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), stock.sparkline || [], (ranking ?? 0) >= 0));
   return card;
 }
@@ -207,6 +268,10 @@ function renderStock(holding, stock, totalValue) {
 function renderSummary(rows) {
   const valid = rows.filter((row) => Number.isFinite(finite(row.stock?.price)));
   let marketValue = 0;
+  let totalCost = 0;
+  let pricedMarketValue = 0;
+  let allShares = 0;
+  let coveredShares = 0;
   let dayPnl = 0;
   let weekPnl = 0;
   let weightedScore = 0;
@@ -216,38 +281,52 @@ function renderSummary(rows) {
 
   valid.forEach(({ holding, stock }) => {
     const price = finite(stock.price);
-    const value = price * holding.shares;
+    const performance = Portfolio.summarizeHolding(holding, price);
     const day = change(price, finite(stock.previousClose));
     const week = change(price, finite(stock.weekAgoClose));
     const score = momentumScore(day.percent, week.percent);
-    marketValue += value;
-    dayPnl += (day.amount || 0) * holding.shares;
-    weekPnl += (week.amount || 0) * holding.shares;
+    marketValue += performance.marketValue;
+    totalCost += performance.costBasis;
+    pricedMarketValue += price * performance.pricedShares;
+    allShares += performance.shares;
+    coveredShares += performance.pricedShares;
+    dayPnl += (day.amount || 0) * performance.shares;
+    weekPnl += (week.amount || 0) * performance.shares;
     if ((week.percent || 0) > 0) weeklyWinners += 1;
     if ((day.percent || 0) > 0) dailyWinners += 1;
-    if (score !== null) { weightedScore += score * value; scoreWeight += value; }
+    if (score !== null) { weightedScore += score * performance.marketValue; scoreWeight += performance.marketValue; }
   });
 
+  const totalReturn = coveredShares ? pricedMarketValue - totalCost : null;
+  const totalReturnPercent = totalReturn === null || totalCost <= 0 ? null : (totalReturn / totalCost) * 100;
   const score = scoreWeight ? Math.round(weightedScore / scoreWeight) : 0;
   const [rank, note] = scoreTier(score);
   const level = Math.max(1, Math.floor(score / 10) + 1);
   const xp = score * 10;
   const questPercent = valid.length ? Math.round((weeklyWinners / valid.length) * 100) : 0;
+
   elements.score.textContent = valid.length ? score : "—";
   elements.scoreOrbit.style.setProperty("--score", score);
-  elements.scoreRank.textContent = valid.length ? rank : "Add your first ticker";
-  elements.scoreNote.textContent = valid.length ? note : "Build a lineup to unlock your momentum score.";
+  elements.scoreRank.textContent = valid.length ? rank : "No positions yet";
+  elements.scoreNote.textContent = valid.length ? note : "Add a purchase at the bottom to begin.";
   elements.xpFill.style.width = `${score}%`;
   elements.xpLabel.textContent = `${xp} XP`;
   elements.level.textContent = `Level ${level}`;
   elements.marketValue.textContent = money(marketValue);
+  elements.positionCount.textContent = `${valid.length} ${valid.length === 1 ? "position" : "positions"} · ${formatShares(allShares)} shares`;
+  elements.totalReturn.textContent = money(totalReturn, "USD", true);
+  elements.totalReturn.className = classFor(totalReturn);
+  elements.totalReturnPercent.textContent = totalReturnPercent === null ? "Add purchase prices" : `${percent(totalReturnPercent)} on priced shares`;
+  elements.totalReturnPercent.className = classFor(totalReturnPercent);
+  elements.costBasis.textContent = totalCost > 0 ? money(totalCost) : "—";
+  elements.costCoverage.textContent = !coveredShares ? "No purchase prices yet" : Math.abs(coveredShares - allShares) < 1e-9 ? `All ${formatShares(allShares)} shares priced` : `${formatShares(coveredShares)} of ${formatShares(allShares)} shares priced`;
   elements.dayPnl.textContent = money(dayPnl, "USD", true);
   elements.weekPnl.textContent = money(weekPnl, "USD", true);
   elements.dayPnl.className = classFor(dayPnl);
   elements.weekPnl.className = classFor(weekPnl);
   elements.questCount.textContent = `${weeklyWinners} / ${valid.length}`;
   elements.questFill.style.width = `${questPercent}%`;
-  elements.questCopy.textContent = valid.length ? `${weeklyWinners} of ${valid.length} holdings are above their weekly line.` : "Positive weekly momentum earns the Weekly Winner badge.";
+  elements.questCopy.textContent = valid.length ? `${weeklyWinners} of ${valid.length} positions are above their weekly line.` : "Positive weekly momentum earns the Weekly Winner badge.";
   const badges = [
     ["Weekly winner", weeklyWinners === valid.length && valid.length > 0],
     ["Green screen", dailyWinners === valid.length && valid.length > 0],
@@ -259,15 +338,16 @@ function renderSummary(rows) {
 function render() {
   const lookup = new Map(state.data.symbols.map((stock) => [stock.symbol, stock]));
   const rows = state.holdings.map((holding) => ({ holding, stock: lookup.get(holding.symbol) }));
-  const totalValue = rows.reduce((sum, row) => sum + (finite(row.stock?.price) || 0) * row.holding.shares, 0);
+  const totalValue = rows.reduce((sum, row) => sum + (finite(row.stock?.price) || 0) * Portfolio.totalShares(row.holding), 0);
   const sorted = [...rows].sort((a, b) => {
     const refA = state.period === "day" ? a.stock?.previousClose : a.stock?.weekAgoClose;
     const refB = state.period === "day" ? b.stock?.previousClose : b.stock?.weekAgoClose;
     return (change(finite(b.stock?.price), finite(refB)).percent ?? -999) - (change(finite(a.stock?.price), finite(refA)).percent ?? -999);
   });
+
   elements.grid.replaceChildren();
   if (!sorted.length) {
-    elements.grid.innerHTML = '<div class="empty-state"><strong>Your lineup is empty.</strong>Use the form above to add a stock ticker.</div>';
+    elements.grid.innerHTML = '<div class="empty-state"><strong>Your portfolio is empty.</strong><a href="#add-heading">Record a purchase at the bottom</a> to begin.</div>';
   } else {
     sorted.forEach(({ holding, stock }) => elements.grid.appendChild(renderStock(holding, stock, totalValue)));
   }
@@ -280,44 +360,99 @@ function addHolding(event) {
   event.preventDefault();
   const symbol = elements.ticker.value.trim().toUpperCase();
   const shares = finite(elements.shares.value);
+  const price = finite(elements.price.value);
   elements.formNote.classList.remove("error");
   if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)) {
     elements.formNote.textContent = "Use a valid ticker such as AAPL or BRK.B.";
     elements.formNote.classList.add("error");
     return;
   }
-  if (!shares || shares <= 0) {
-    elements.formNote.textContent = "Enter a share count greater than zero.";
+  if (!shares || shares <= 0 || !price || price <= 0) {
+    elements.formNote.textContent = "Enter both a share count and purchase price greater than zero.";
     elements.formNote.classList.add("error");
     return;
   }
+  const lot = { id: newLotId(), shares, price };
   const existing = state.holdings.find((item) => item.symbol === symbol);
-  if (existing) existing.shares += shares;
-  else state.holdings.push({ symbol, shares });
+  if (existing) existing.lots.push(lot);
+  else state.holdings.push({ symbol, lots: [lot] });
+  state.openLots.add(symbol);
   persistHoldings();
   elements.form.reset();
   elements.shares.value = "1";
   const covered = state.data.symbols.some((item) => item.symbol === symbol);
-  elements.formNote.textContent = covered ? `${symbol} joined your quest.` : `${symbol} was saved locally; sync it on GitHub for market updates.`;
+  elements.formNote.textContent = covered ? `${symbol} purchase recorded.` : `${symbol} was saved locally; sync it on GitHub for market updates.`;
   render();
+  document.querySelector(`[data-symbol="${CSS.escape(symbol)}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
 elements.form.addEventListener("submit", addHolding);
 elements.ticker.addEventListener("input", () => { elements.ticker.value = elements.ticker.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""); });
+
+elements.grid.addEventListener("toggle", (event) => {
+  const details = event.target.closest("[data-lots-panel]");
+  if (!details) return;
+  if (details.open) state.openLots.add(details.dataset.lotsPanel);
+  else state.openLots.delete(details.dataset.lotsPanel);
+}, true);
+
 elements.grid.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-remove]");
-  if (!button) return;
-  state.holdings = state.holdings.filter((item) => item.symbol !== button.dataset.remove);
+  const stockButton = event.target.closest("[data-remove-stock]");
+  if (stockButton) {
+    state.holdings = state.holdings.filter((item) => item.symbol !== stockButton.dataset.removeStock);
+    state.openLots.delete(stockButton.dataset.removeStock);
+    persistHoldings();
+    render();
+    return;
+  }
+  const lotButton = event.target.closest("[data-remove-lot]");
+  if (!lotButton) return;
+  const card = lotButton.closest("[data-symbol]");
+  const holding = state.holdings.find((item) => item.symbol === card?.dataset.symbol);
+  if (!holding) return;
+  state.openLots.add(holding.symbol);
+  holding.lots = holding.lots.filter((lot) => lot.id !== lotButton.dataset.removeLot);
+  if (!holding.lots.length) state.holdings = state.holdings.filter((item) => item !== holding);
   persistHoldings();
   render();
 });
+
 elements.grid.addEventListener("change", (event) => {
-  const input = event.target.closest("[data-shares]");
+  const input = event.target.closest("[data-lot-shares], [data-lot-price]");
   if (!input) return;
-  const holding = state.holdings.find((item) => item.symbol === input.dataset.shares);
-  const shares = finite(input.value);
-  if (holding && shares && shares > 0) { holding.shares = shares; persistHoldings(); render(); }
+  const card = input.closest("[data-symbol]");
+  const holding = state.holdings.find((item) => item.symbol === card?.dataset.symbol);
+  if (!holding) return;
+  const lotId = input.dataset.lotShares || input.dataset.lotPrice;
+  const lot = holding.lots.find((item) => item.id === lotId);
+  if (!lot) return;
+  state.openLots.add(holding.symbol);
+  const value = finite(input.value);
+  if (input.dataset.lotShares !== undefined) {
+    if (!value || value <= 0) { render(); return; }
+    lot.shares = value;
+  } else {
+    if (value !== null && value <= 0) { render(); return; }
+    lot.price = value;
+  }
+  persistHoldings();
+  render();
 });
+
+elements.grid.addEventListener("submit", (event) => {
+  const form = event.target.closest("[data-add-lot]");
+  if (!form) return;
+  event.preventDefault();
+  const holding = state.holdings.find((item) => item.symbol === form.dataset.addLot);
+  const shares = finite(form.elements.shares.value);
+  const price = finite(form.elements.price.value);
+  if (!holding || !shares || shares <= 0 || !price || price <= 0) return;
+  holding.lots.push({ id: newLotId(), shares, price });
+  state.openLots.add(holding.symbol);
+  persistHoldings();
+  render();
+});
+
 document.querySelectorAll("[data-period]").forEach((button) => button.addEventListener("click", () => {
   state.period = button.dataset.period;
   document.querySelectorAll("[data-period]").forEach((item) => item.classList.toggle("active", item === button));
@@ -332,6 +467,7 @@ fetch(`./data/market.json?v=${Date.now()}`)
   .then((data) => {
     state.data = data;
     state.holdings = loadHoldings(data.symbols || []);
+    persistHoldings();
     setSession(data.session);
     renderFreshness();
     render();

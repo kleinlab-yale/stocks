@@ -1,6 +1,6 @@
 # TickerQuest
 
-A free, static portfolio scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, and turns daily and weekly momentum into a transparent 0–100 score.
+A free, static portfolio scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily and weekly momentum into a transparent 0–100 score.
 
 ## Change the tracked tickers
 
@@ -15,7 +15,7 @@ The included lineup is NVDA, META, AMD, MSFT, GOOG, TSM, and EOSE. The file uses
 ]
 ```
 
-The next scheduled run will refresh those symbols. Visitors can also add or remove symbols and set share counts in the page; those personal choices stay in that browser. A symbol added only in the browser will show as pending until it is also added to `config/watchlist.json`.
+The next scheduled run will refresh those symbols. Visitors can add or remove symbols and record any number of purchases for the same ticker, each with its own share count and price paid. The page aggregates the lots into total shares, weighted average cost, cost basis, and unrealized gain or loss. These personal choices stay in that browser. Existing version-one share counts migrate automatically as purchase lots with an unknown price, ready for the user to fill in. A symbol added only in the browser will show as pending until it is also added to `config/watchlist.json`.
 
 ## Publish on GitHub Pages
 
@@ -49,7 +49,7 @@ Each stock receives a momentum score:
 50 + 25 × tanh(day % ÷ 3) + 25 × tanh(week % ÷ 7)
 ```
 
-The portfolio score is weighted by each holding's current market value. Scores are descriptive game mechanics, not predictions or investment recommendations.
+The portfolio score is weighted by each holding's current market value. Total return uses only the purchase lots with a recorded price and clearly reports partial cost coverage when some historical prices are still missing. Scores are descriptive game mechanics, not predictions or investment recommendations.
 
 ## Data and limitations
 
