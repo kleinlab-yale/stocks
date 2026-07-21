@@ -335,6 +335,10 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
         auto_adjust=False,
         actions=False,
     )
+    try:
+        long_history = ticker.history(period="5y", interval="1wk", auto_adjust=False, actions=False)
+    except Exception:
+        long_history = None
     if daily.empty and intraday.empty:
         raise RuntimeError("No price history returned")
 
@@ -361,6 +365,18 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
         week_ago_close = previous_close
         sparkline = []
 
+    long_close = None if long_history is None or long_history.empty else long_history["Close"].dropna()
+    if long_close is not None and not long_close.empty:
+        five_year_sparkline = [round(float(value), 4) for value in long_close.iloc[-261:].tolist() if number(value) is not None]
+        year_sparkline = five_year_sparkline[-53:]
+        year_ago_close = number(year_sparkline[0]) if len(year_sparkline) >= 2 else week_ago_close
+        five_year_ago_close = number(five_year_sparkline[0]) if len(five_year_sparkline) >= 2 else year_ago_close
+    else:
+        year_sparkline = []
+        five_year_sparkline = []
+        year_ago_close = None
+        five_year_ago_close = None
+
     current_price = last_number(intraday["Close"]) if not intraday.empty else latest_daily
     regular_price = last_number(closes_for_clock(intraday, time(9, 30), time(16, 0), now_et.date())) or latest_daily
     premarket_price = last_number(closes_for_clock(intraday, time(4, 0), time(9, 30), now_et.date()))
@@ -381,9 +397,13 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
         "regularPrice": round(regular_price, 4) if regular_price is not None else None,
         "previousClose": round(previous_close, 4) if previous_close is not None else None,
         "weekAgoClose": round(week_ago_close, 4) if week_ago_close is not None else None,
+        "yearAgoClose": round(year_ago_close, 4) if year_ago_close is not None else None,
+        "fiveYearAgoClose": round(five_year_ago_close, 4) if five_year_ago_close is not None else None,
         "premarketPrice": round(premarket_price, 4) if premarket_price is not None else None,
         "afterHoursPrice": round(after_hours_price, 4) if after_hours_price is not None else None,
         "sparkline": sparkline[-8:],
+        "yearSparkline": year_sparkline,
+        "fiveYearSparkline": five_year_sparkline,
         "status": "ok",
     }
 
@@ -427,9 +447,13 @@ def main() -> None:
                         "regularPrice": None,
                         "previousClose": None,
                         "weekAgoClose": None,
+                        "yearAgoClose": None,
+                        "fiveYearAgoClose": None,
                         "premarketPrice": None,
                         "afterHoursPrice": None,
                         "sparkline": [],
+                        "yearSparkline": [],
+                        "fiveYearSparkline": [],
                         "currency": "USD",
                     }
                 )

@@ -39,7 +39,12 @@
         <div class="live-board" aria-label="Live portfolio overview">
           <article class="board-cell board-market">
             <div class="board-cell-heading">
-              <span>Market value</span>
+              <span>Market value
+                <span class="definition">
+                  <button class="definition-trigger" type="button" aria-label="How market value is calculated" aria-expanded="false" aria-controls="definition-market-value" data-definition-trigger>i</button>
+                  <span class="definition-popover" id="definition-market-value" role="tooltip"><strong>Market value</strong><span>Shares held × the latest available price, added across all positions. The latest price may come from the regular, pre-market, or after-hours session.</span></span>
+                </span>
+              </span>
               <span id="freshness-badge" class="data-badge">Loading</span>
             </div>
             <strong id="market-value">—</strong>
@@ -48,7 +53,12 @@
           </article>
 
           <article class="board-cell board-score" aria-labelledby="score-heading">
-            <span class="board-label" id="score-heading">Momentum score</span>
+            <span class="board-label" id="score-heading">Momentum score
+              <span class="definition align-right">
+                <button class="definition-trigger" type="button" aria-label="How momentum score is calculated" aria-expanded="false" aria-controls="definition-momentum" data-definition-trigger>i</button>
+                <span class="definition-popover" id="definition-momentum" role="tooltip"><strong>Momentum score</strong><span>Each stock starts at 50. Today and the week can each add or subtract up to 25: 50 + 25 × tanh(day % ÷ 3) + 25 × tanh(week % ÷ 7), capped at 0–100. The portfolio score is weighted by market value.</span></span>
+              </span>
+            </span>
             <div class="score-orbit" id="score-orbit" style="--score: 0">
               <div class="score-core">
                 <span class="score-number" id="portfolio-score">—</span>
@@ -78,7 +88,12 @@
           </article>
 
           <article class="board-cell board-cost">
-            <span class="board-label">Cost basis</span>
+            <span class="board-label">Cost basis
+              <span class="definition">
+                <button class="definition-trigger" type="button" aria-label="How cost basis is calculated" aria-expanded="false" aria-controls="definition-cost-basis" data-definition-trigger>i</button>
+                <span class="definition-popover" id="definition-cost-basis" role="tooltip"><strong>Cost basis</strong><span>Shares bought × price paid for every recorded purchase lot, then added together. Lots without a purchase price are excluded until that price is entered.</span></span>
+              </span>
+            </span>
             <strong id="cost-basis">—</strong>
             <small id="cost-coverage">No purchase prices yet</small>
             <div class="coverage-track" aria-hidden="true"><span id="cost-coverage-fill"></span></div>
@@ -86,7 +101,12 @@
 
           <article class="board-cell board-overnight">
             <div class="overnight-heading">
-              <span class="board-label">Overnight pulse</span>
+              <span class="board-label">Overnight pulse
+                <span class="definition">
+                  <button class="definition-trigger" type="button" aria-label="How overnight pulse is calculated" aria-expanded="false" aria-controls="definition-overnight" data-definition-trigger>i</button>
+                  <span class="definition-popover" id="definition-overnight" role="tooltip"><strong>Overnight pulse</strong><span>50% portfolio extended-hours signal + 25% weighted Asian index signal + 25% time-decayed 18-hour headline signal. Missing inputs are neutral at 50 and the result is marked partial. This is not a forecast.</span></span>
+                </span>
+              </span>
               <span class="data-badge" id="overnight-status">Loading</span>
             </div>
             <div class="overnight-main">
@@ -124,9 +144,11 @@
             <p class="eyebrow muted"><span>Your portfolio</span><span class="rule"></span><span id="holding-count">0 holdings</span></p>
             <h2 id="portfolio-heading">Positions</h2>
           </div>
-          <div class="period-switch" role="group" aria-label="Rank stocks by period">
+          <div class="period-switch" role="group" aria-label="Select trend period and rank stocks">
             <button class="period-button active" type="button" data-period="day">Today</button>
             <button class="period-button" type="button" data-period="week">Week</button>
+            <button class="period-button" type="button" data-period="year">1Y</button>
+            <button class="period-button" type="button" data-period="fiveYear">5Y</button>
           </div>
         </div>
 

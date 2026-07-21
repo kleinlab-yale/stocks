@@ -5,6 +5,12 @@ const Portfolio = window.TickerQuestPortfolio;
 let lotSequence = 0;
 
 const state = { data: null, holdings: [], watchlist: [], period: "day", openLots: new Set() };
+const PERIODS = {
+  day: { reference: "previousClose", series: "sparkline", label: "Daily" },
+  week: { reference: "weekAgoClose", series: "sparkline", label: "Weekly" },
+  year: { reference: "yearAgoClose", series: "yearSparkline", label: "One-year" },
+  fiveYear: { reference: "fiveYearAgoClose", series: "fiveYearSparkline", label: "Five-year" },
+};
 
 const elements = {
   form: document.querySelector("#ticker-form"),
@@ -63,6 +69,7 @@ const elements = {
 };
 
 const finite = Portfolio.finite;
+const POINTS_DEFINITION = "A stock’s 0–100 momentum score. It starts at 50; today and the week can each add or subtract up to 25 using the same curved formula as the portfolio score. Points describe price momentum, not investment quality or dollars earned.";
 
 function newLotId() {
   lotSequence += 1;
@@ -71,6 +78,13 @@ function newLotId() {
 
 function escapeHTML(value) {
   return String(value).replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+}
+
+function definitionControl(id, label, copy, alignment = "align-right") {
+  return `<span class="definition ${alignment}">
+    <button class="definition-trigger" type="button" aria-label="Define ${escapeHTML(label)}" aria-expanded="false" aria-controls="${escapeHTML(id)}" data-definition-trigger>i</button>
+    <span class="definition-popover" id="${escapeHTML(id)}" role="tooltip"><strong>${escapeHTML(label)}</strong><span>${escapeHTML(copy)}</span></span>
+  </span>`;
 }
 
 function safeURL(value) {
@@ -106,6 +120,19 @@ function formatShares(value) {
 function change(price, reference) {
   if (!Number.isFinite(price) || !Number.isFinite(reference) || reference === 0) return { amount: null, percent: null };
   return { amount: price - reference, percent: ((price - reference) / reference) * 100 };
+}
+
+function selectedTrend(stock) {
+  const config = PERIODS[state.period] || PERIODS.day;
+  const price = finite(stock?.price);
+  const isShortHorizon = state.period === "day" || state.period === "week";
+  const fallbackReference = finite(stock?.weekAgoClose) || finite(stock?.previousClose) || price;
+  const reference = finite(stock?.[config.reference]) ?? (isShortHorizon ? fallbackReference : null);
+  const supplied = Array.isArray(stock?.[config.series]) ? stock[config.series].map(Number).filter(Number.isFinite) : [];
+  const fallbackSeries = Array.isArray(stock?.sparkline) ? stock.sparkline.map(Number).filter(Number.isFinite) : [];
+  const values = supplied.length >= 2 ? supplied : isShortHorizon && fallbackSeries.length >= 2 ? fallbackSeries : [];
+  if (price !== null && values.length) values[values.length - 1] = price;
+  return { ...config, reference, values, performance: change(price, reference) };
 }
 
 function momentumScore(day, week) {
@@ -225,9 +252,7 @@ function aggregatePortfolioTrend(rows) {
     const price = finite(stock?.price);
     const shares = Portfolio.totalShares(holding);
     if (!price || !shares) return [];
-    const supplied = Array.isArray(stock.sparkline) ? stock.sparkline.map(Number).filter(Number.isFinite) : [];
-    const values = supplied.length >= 2 ? supplied : [finite(stock.previousClose) || price, price];
-    values[values.length - 1] = price;
+    const values = selectedTrend(stock).values;
     return [{ shares, values }];
   });
   if (!seriesRows.length) return [];
@@ -336,7 +361,7 @@ function renderPendingStock(holding) {
   card.innerHTML = `
     <div class="stock-top">
       <div class="stock-symbol"><span class="ticker-avatar">${escapeHTML(holding.symbol.slice(0, 3))}</span><div><h3>${escapeHTML(holding.symbol)}</h3><p>Waiting for market data</p></div></div>
-      <span class="score-pill">— pts</span>
+      <span class="score-cluster"><span class="score-pill">— pts</span>${definitionControl(`definition-holding-points-${holding.symbol}`, "Points", POINTS_DEFINITION)}</span>
     </div>
     <div class="pending-copy"><strong>${formatShares(summary.shares)} shares saved</strong><p>Add this ticker to the repository watchlist to include it in scheduled quotes.</p><a href="https://github.com/kleinlab-yale/stocks/edit/main/config/watchlist.json">Sync on GitHub ↗</a></div>
     ${lotsPanel(holding)}`;
@@ -350,8 +375,9 @@ function renderStock(holding, stock, totalValue) {
   const performance = Portfolio.summarizeHolding(holding, price);
   const day = change(price, finite(stock.previousClose));
   const week = change(price, finite(stock.weekAgoClose));
+  const trend = selectedTrend(stock);
   const score = momentumScore(day.percent, week.percent);
-  const ranking = state.period === "day" ? day.percent : week.percent;
+  const ranking = trend.performance.percent;
   const scoreClass = score >= 65 ? "high" : score < 40 ? "low" : "";
   const initials = stock.symbol.slice(0, 3);
   const portfolioWeight = totalValue > 0 ? (performance.marketValue / totalValue) * 100 : 0;
@@ -371,11 +397,11 @@ function renderStock(holding, stock, totalValue) {
   card.innerHTML = `
     <div class="stock-top">
       <div class="stock-symbol"><span class="ticker-avatar">${escapeHTML(initials)}</span><div><h3>${escapeHTML(stock.symbol)}</h3><p>${escapeHTML(stock.name || stock.symbol)}</p></div></div>
-      <span class="score-pill ${scoreClass}" title="Momentum score">${score ?? "—"} pts</span>
+      <span class="score-cluster"><span class="score-pill ${scoreClass}">${score ?? "—"} pts</span>${definitionControl(`definition-holding-points-${holding.symbol}`, "Points", POINTS_DEFINITION)}</span>
     </div>
     <div class="price-row">
       <div class="price-main"><span>Current price</span><strong>${money(price, stock.currency)}</strong></div>
-      <canvas class="sparkline" aria-label="Seven-session price trend" role="img"></canvas>
+      <canvas class="sparkline" aria-label="${escapeHTML(trend.label)} price trend" role="img"></canvas>
     </div>
     <div class="stock-metrics">
       <div class="stock-metric"><span class="metric-label">Today</span><strong class="${classFor(day.percent)}">${percent(day.percent)}</strong><small>${money(day.amount, stock.currency, true)} / share</small></div>
@@ -392,7 +418,7 @@ function renderStock(holding, stock, totalValue) {
       <div class="weight-track" aria-hidden="true"><span style="width:${Math.min(portfolioWeight, 100)}%"></span></div>
     </div>
     ${lotsPanel(holding, stock.currency)}`;
-  requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), stock.sparkline || [], (ranking ?? 0) >= 0));
+  requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), trend.values, (ranking ?? 0) >= 0));
   return card;
 }
 
@@ -415,6 +441,7 @@ function renderWatchStock(symbol, stock) {
   const price = finite(stock.price);
   const day = change(price, finite(stock.previousClose));
   const week = change(price, finite(stock.weekAgoClose));
+  const trend = selectedTrend(stock);
   const score = momentumScore(day.percent, week.percent);
   const scoreClass = score >= 65 ? "high" : score < 40 ? "low" : "";
   const pre = finite(stock.premarketPrice);
@@ -430,8 +457,8 @@ function renderWatchStock(symbol, stock) {
     </div>
     <div class="watch-price-row">
       <div><span>Current</span><strong>${money(price, stock.currency)}</strong></div>
-      <canvas class="watch-sparkline" aria-label="Seven-session ${escapeHTML(symbol)} price trend" role="img"></canvas>
-      <span class="score-pill ${scoreClass}" title="Momentum score">${score ?? "—"} pts</span>
+      <canvas class="watch-sparkline" aria-label="${escapeHTML(trend.label)} ${escapeHTML(symbol)} price trend" role="img"></canvas>
+      <span class="score-cluster"><span class="score-pill ${scoreClass}">${score ?? "—"} pts</span>${definitionControl(`definition-watch-points-${symbol}`, "Points", POINTS_DEFINITION)}</span>
     </div>
     <div class="watch-metrics">
       <span>Today <strong class="${classFor(day.percent)}">${percent(day.percent)}</strong></span>
@@ -439,7 +466,7 @@ function renderWatchStock(symbol, stock) {
       <span>${escapeHTML(extended.join(" · "))}</span>
     </div>
     <div class="watch-actions"><span>Not included in portfolio</span><button type="button" data-watch-buy="${escapeHTML(symbol)}">Record purchase</button></div>`;
-  requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), stock.sparkline || [], (state.period === "day" ? day.percent : week.percent) >= 0));
+  requestAnimationFrame(() => drawSparkline(card.querySelector("canvas"), trend.values, (trend.performance.percent ?? 0) >= 0));
   return card;
 }
 
@@ -547,9 +574,7 @@ function render() {
   const rows = state.holdings.map((holding) => ({ holding, stock: lookup.get(holding.symbol) }));
   const totalValue = rows.reduce((sum, row) => sum + (finite(row.stock?.price) || 0) * Portfolio.totalShares(row.holding), 0);
   const sorted = [...rows].sort((a, b) => {
-    const refA = state.period === "day" ? a.stock?.previousClose : a.stock?.weekAgoClose;
-    const refB = state.period === "day" ? b.stock?.previousClose : b.stock?.weekAgoClose;
-    return (change(finite(b.stock?.price), finite(refB)).percent ?? -999) - (change(finite(a.stock?.price), finite(refA)).percent ?? -999);
+    return (selectedTrend(b.stock).performance.percent ?? -999) - (selectedTrend(a.stock).performance.percent ?? -999);
   });
 
   elements.grid.replaceChildren();
@@ -627,6 +652,31 @@ elements.form.addEventListener("submit", addHolding);
 elements.ticker.addEventListener("input", () => { elements.ticker.value = elements.ticker.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""); });
 elements.watchForm.addEventListener("submit", addWatch);
 elements.watchInput.addEventListener("input", () => { elements.watchInput.value = elements.watchInput.value.toUpperCase().replace(/[^A-Z0-9.-]/g, ""); });
+
+function closeDefinitions(except = null) {
+  document.querySelectorAll(".definition.open").forEach((definition) => {
+    if (definition === except) return;
+    definition.classList.remove("open");
+    definition.querySelector("[data-definition-trigger]")?.setAttribute("aria-expanded", "false");
+  });
+}
+
+document.addEventListener("click", (event) => {
+  const trigger = event.target.closest("[data-definition-trigger]");
+  if (!trigger) {
+    closeDefinitions();
+    return;
+  }
+  const definition = trigger.closest(".definition");
+  const shouldOpen = !definition.classList.contains("open");
+  closeDefinitions(definition);
+  definition.classList.toggle("open", shouldOpen);
+  trigger.setAttribute("aria-expanded", String(shouldOpen));
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeDefinitions();
+});
 
 elements.watchGrid.addEventListener("click", (event) => {
   const removeButton = event.target.closest("[data-unwatch]");

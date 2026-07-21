@@ -17,6 +17,8 @@ The included lineup is NVDA, META, AMD, MSFT, GOOG, TSM, and EOSE. The file uses
 
 The next scheduled run will refresh those symbols. Visitors can keep stocks they are considering in a separate browser-local Watchlist without affecting portfolio value, weighting, P&L, or scores. Recording a purchase from a watched ticker moves it into the portfolio automatically.
 
+The trend selector includes daily, weekly, one-year, and five-year views. One-year and five-year lines use weekly historical closes, while the selected horizon also controls the ordering and line color of positions and watched stocks.
+
 Visitors can also add or remove holdings and record any number of purchases for the same ticker, each with its own share count and price paid. The page aggregates the lots into total shares, weighted average cost, cost basis, and unrealized gain or loss. These personal choices stay in that browser. Existing version-one share counts migrate automatically as purchase lots with an unknown price, ready for the user to fill in. A symbol added only in the browser will show as pending until it is also added to `config/watchlist.json`.
 
 ## Publish on GitHub Pages
@@ -52,6 +54,8 @@ Each stock receives a momentum score:
 ```
 
 The portfolio score is weighted by each holding's current market value. Total return uses only the purchase lots with a recorded price and clearly reports partial cost coverage when some historical prices are still missing. Scores are descriptive game mechanics, not predictions or investment recommendations.
+
+Small information controls beside Market Value, Momentum Score, Cost Basis, Overnight Pulse, and each stock's points reveal these definitions on hover, keyboard activation, or tap without adding permanent explanatory sections to the dashboard.
 
 The Overnight Pulse combines three components:
 
