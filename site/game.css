@@ -82,7 +82,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   transform: rotate(-3deg);
 }
 .game-header-tools { display: flex; align-items: center; gap: 8px; }
-.game-session-chip, .quiet-link, .quiet-button {
+.game-session-chip, .quiet-button {
   border: 1px solid var(--line);
   border-radius: 999px;
   background: rgba(251, 250, 245, .78);
@@ -106,7 +106,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   box-shadow: 0 0 0 4px rgba(94, 174, 47, .12);
 }
 .game-session-chip.closed .game-status-dot { background: #9da7a3; box-shadow: 0 0 0 4px rgba(157,167,163,.12); }
-.quiet-link, .quiet-button {
+.quiet-button {
   padding: 8px 12px;
   color: var(--ink);
   font-size: 10px;
@@ -589,7 +589,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .game-brand { font-size: 14px; }
   .game-brand-mark { width: 31px; height: 31px; }
   .game-session-chip { max-width: 142px; overflow: hidden; padding: 7px 9px; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
-  .quiet-link { display: none; }
   .quiet-button { padding: 7px 9px; font-size: 8px; }
   .game-shell { padding-block: 12px 42px; }
   .gateway { gap: 9px; }

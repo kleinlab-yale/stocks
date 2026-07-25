@@ -14,7 +14,7 @@ The host can:
 - start after at least two players have joined; and
 - end the game early and lock the final standings.
 
-Players can buy and sell fractional shares during the regular U.S. market session using the shared TickerQuest quote snapshot. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
+Players can buy and sell fractional shares whenever the game is active, including nights and weekends. Orders use the newest shared TickerQuest quote available—regular-market, pre-market, after-hours, or the most recent closing snapshot—and show that quote’s session and timestamp before execution. A quote more than seven days old cannot execute a trade. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
 
 ### Game taxation
 

@@ -117,9 +117,9 @@
     }
   }
 
-  function setSession(label, canTrade = false) {
+  function setSession(label, marketIsOpen = false) {
     sessionLabel.textContent = label || "Family league";
-    sessionChip.classList.toggle("closed", !canTrade);
+    sessionChip.classList.toggle("closed", !marketIsOpen);
   }
 
   function showToast(message, isError = false) {
@@ -223,8 +223,8 @@
           <div class="seat-badge">TQ</div>
           <p class="eyebrow">Almost ready</p>
           <h1>The family game service is being connected.</h1>
-          <p>Refresh this page shortly. The regular market dashboard is still available.</p>
-          <a class="primary-action" href="./" style="display:grid;place-items:center;text-decoration:none">Open market dashboard</a>
+          <p>Refresh this page shortly to continue into the family game.</p>
+          <button class="primary-action" type="button" data-action="refresh" style="width:100%">Try again</button>
         </div>
       </section>
     `;
@@ -409,7 +409,8 @@
                 </div>
                 <label class="game-field"><span>Ticker</span><select name="symbol">${symbolOptions}</select></label>
                 <label class="game-field"><span>Shares</span><input name="shares" type="number" min="0.000001" step="0.000001" inputmode="decimal" placeholder="0" required></label>
-                <div class="trade-quote"><span>Current shared quote</span><strong data-trade-price>—</strong></div>
+                <div class="market-closed">Orders are available anytime using the newest shared quote: ${escapeHtml(data.market.sessionLabel)} · ${dateTime(data.market.generatedAt)}.</div>
+                <div class="trade-quote"><span>Latest available quote</span><strong data-trade-price>—</strong></div>
                 <div class="trade-summary">
                   <span>Estimated value<strong data-trade-value>$0.00</strong></span>
                   <span>${tradeSide === "buy" ? "Spendable cash" : "Owned shares"}<strong data-trade-limit>—</strong></span>
@@ -421,7 +422,7 @@
                 ${
                   data.game.status !== "active"
                     ? "Trading is closed because this game is not active."
-                    : "Orders open during the regular U.S. market session. Pre-market and after-hours prices remain visible on the main dashboard, but cannot execute game trades."
+                    : "The latest shared quote is unavailable or more than seven days old. Trading will reopen automatically when the price feed refreshes."
                 }
               </div>`
         }
@@ -494,7 +495,10 @@
     const joined = data.leaderboard.length;
     const canSell = Boolean(isPlayer && data.market.canTrade && data.game.status === "active");
     const stateClass = data.game.status === "active" ? "active" : data.game.status === "ended" ? "ended" : "";
-    setSession(data.market.sessionLabel, data.market.canTrade);
+    setSession(
+      data.market.sessionLabel,
+      data.market.sessionLabel === "Market open",
+    );
 
     root.innerHTML = `
       <div class="game-topline">

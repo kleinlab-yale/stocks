@@ -6,6 +6,7 @@ import {
   allocateFifoSale,
   applyPendingWashLosses,
   grossCents,
+  quoteTimestampIsExecutable,
   sharesToMicros,
   taxReserveCents,
 } from "../lib/game-rules.js";
@@ -73,4 +74,19 @@ test("ranks using cash plus holdings minus the locked tax reserve", () => {
     }),
     1_075_000,
   );
+});
+
+test("allows weekend execution with the newest available quote", () => {
+  const saturdayNoon = Date.parse("2026-07-25T16:00:00Z");
+  const fridayAfterHours = "2026-07-24T23:30:00Z";
+  assert.equal(
+    quoteTimestampIsExecutable(fridayAfterHours, saturdayNoon),
+    true,
+  );
+});
+
+test("blocks execution when the shared quote is more than seven days old", () => {
+  const now = Date.parse("2026-07-25T16:00:00Z");
+  const oldQuote = "2026-07-17T15:59:59Z";
+  assert.equal(quoteTimestampIsExecutable(oldQuote, now), false);
 });

@@ -5,6 +5,7 @@ import {
   applyPendingWashLosses,
   grossCents,
   microsToShares,
+  quoteTimestampIsExecutable,
   sharesToMicros,
   taxReserveCents,
 } from "@/lib/game-rules.js";
@@ -23,6 +24,7 @@ const STARTING_CASH_CENTS = 1_000_000;
 const TAX_RATE_BPS = 2_400;
 const MAX_SEATS = 8;
 const WASH_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
+const MAX_EXECUTION_QUOTE_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 
 type GameRow = {
   id: string;
@@ -208,7 +210,15 @@ async function requirePlayer(
   return seat;
 }
 
-async function fetchMarket(requireOpen = false) {
+function quoteSnapshotIsExecutable(snapshot: MarketSnapshot) {
+  return quoteTimestampIsExecutable(
+    snapshot.generatedAt,
+    Date.now(),
+    MAX_EXECUTION_QUOTE_AGE_MS,
+  );
+}
+
+async function fetchMarket(requireExecutable = false) {
   const response = await fetch(`${MARKET_URL}?game=${Date.now()}`, {
     cache: "no-store",
   });
@@ -216,20 +226,11 @@ async function fetchMarket(requireOpen = false) {
     throw new HttpError(503, "The shared market snapshot is unavailable.");
   }
   const snapshot = (await response.json()) as MarketSnapshot;
-  if (requireOpen) {
-    if (snapshot.session?.label !== "Market open") {
-      throw new HttpError(
-        409,
-        "Trading is available during the regular U.S. market session.",
-      );
-    }
-    const generated = new Date(snapshot.generatedAt).getTime();
-    if (!Number.isFinite(generated) || Date.now() - generated > 60 * 60 * 1_000) {
-      throw new HttpError(
-        503,
-        "The quote snapshot is too old to execute a fair trade.",
-      );
-    }
+  if (requireExecutable && !quoteSnapshotIsExecutable(snapshot)) {
+    throw new HttpError(
+      503,
+      "The latest shared quote is more than seven days old. Try again after the price feed refreshes.",
+    );
   }
   return snapshot;
 }
@@ -826,6 +827,12 @@ async function gameState(request: Request) {
     .map((player, index) => ({ ...player, rank: index + 1 }));
 
   const sessionLabel = market.session?.label ?? "Market unavailable";
+  const hasExecutablePrice = market.symbols.some((item) => {
+    const price = Number(item.price);
+    return Number.isFinite(price) && price > 0;
+  });
+  const quoteIsExecutable =
+    quoteSnapshotIsExecutable(market) && hasExecutablePrice;
   return json(request, {
     game: {
       id: game.id,
@@ -867,7 +874,8 @@ async function gameState(request: Request) {
       generatedAt: market.generatedAt,
       mode: market.mode,
       sessionLabel,
-      canTrade: game.status === "active" && sessionLabel === "Market open",
+      executionPolicy: "latest-available",
+      canTrade: game.status === "active" && quoteIsExecutable,
       symbols: market.symbols.map((item) => ({
         symbol: item.symbol,
         name: item.name ?? item.symbol,
