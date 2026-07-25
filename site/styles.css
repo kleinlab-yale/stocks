@@ -56,6 +56,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visibl
 .session-chip.closed .status-dot { background: #9da7a3; box-shadow: 0 0 0 4px rgba(157, 167, 163, 0.12); }
 .session-chip.extended .status-dot { background: var(--lavender); box-shadow: 0 0 0 4px rgba(169, 156, 248, 0.14); }
 .icon-link { padding: 8px 13px; font-size: 12px; font-weight: 750; text-decoration: none; }
+.game-link { background: var(--ink); color: var(--mint); }
 
 h1, h2, h3, p { text-wrap: pretty; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -293,6 +294,7 @@ h1, h2, h3, p { text-wrap: pretty; }
   .brand-mark { width: 31px; height: 31px; }
   .session-chip { max-width: 164px; padding: 7px 9px; overflow: hidden; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
   .icon-link { display: none; }
+  .game-link { display: inline-flex; padding: 7px 10px; font-size: 8px; }
 
   .overview { width: calc(100% - 16px); padding-block: 8px 38px; }
   .live-board { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; padding: 9px; border-radius: 20px; }

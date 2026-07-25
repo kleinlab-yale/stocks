@@ -4,3 +4,12 @@ __pycache__/
 .pnpm-store/
 .venv/
 .env*
+/node_modules/
+/.next/
+/.vinext/
+/dist/
+/.wrangler/
+/coverage/
+npm-debug.log*
+next-env.d.ts
+*.tsbuildinfo

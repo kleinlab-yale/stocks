@@ -1,6 +1,52 @@
 # TickerQuest
 
-A free, static portfolio and watchlist scorecard for GitHub Pages. TickerQuest refreshes market data on a weekday schedule, includes pre-market and after-hours observations when the source exposes them, tracks purchase-lot cost basis and unrealized return, and turns daily, weekly, and overnight signals into transparent 0–100 scores.
+TickerQuest combines a free portfolio/watchlist scorecard with a private eight-player family stock game. The public dashboard remains on GitHub Pages and refreshes market data on a weekday schedule. The family game adds shared invitations, simulated trading, realistic tax accounting, and an after-tax leaderboard without requiring anyone to create an account.
+
+## Family Portfolio League
+
+Open `game.html` from the dashboard and create a one-week or one-month league. The host receives eight unique private invitation links. A family member follows one link, enters a display name, and immediately receives $10,000 of simulated cash.
+
+The host can:
+
+- invite up to eight players without email addresses or passwords;
+- occupy a player seat while retaining separate host controls;
+- reissue an unclaimed invitation or clear a lobby seat;
+- start after at least two players have joined; and
+- end the game early and lock the final standings.
+
+Players can buy and sell fractional shares during the regular U.S. market session using the shared TickerQuest quote snapshot. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
+
+### Game taxation
+
+The family league uses a consistent simulated tax model:
+
+- every sale realizes a gain or loss whether or not the proceeds are reinvested;
+- purchase lots are sold first-in, first-out;
+- net realized losses offset net realized gains;
+- 24% of positive net realized gains is locked as a tax reserve;
+- reserved tax cannot be spent and is subtracted from leaderboard value; and
+- a loss followed by a same-ticker repurchase within 30 days is deferred into the replacement lot’s cost basis.
+
+Rank is determined by:
+
+```text
+after-tax value = cash + current holdings value − tax reserve
+```
+
+These are transparent game rules, not individualized tax calculations or tax advice.
+
+### Shared-service architecture
+
+GitHub Pages serves the public game interface. A small Cloudflare-compatible service stores games, seats, trades, FIFO lots, and wash-sale adjustments in D1. Raw host and player tokens are only returned in private links; the database stores their SHA-256 hashes. The host’s original eight invitation links are also kept in that host browser so they can be copied again without an account.
+
+The service source lives in the same repository:
+
+- `app/api/game/route.ts` — game API, authentication, market checks, and trades;
+- `db/schema.ts` and `drizzle/` — durable shared database schema;
+- `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
+- `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
+
+Because this first version deliberately avoids accounts, a lost private player link cannot be recovered; the host can reissue that seat before the game starts. A lost host link means the host controls cannot be recovered from another browser.
 
 ## Change the tracked tickers
 

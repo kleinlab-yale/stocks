@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1732" height="908" viewBox="0 0 1732 908" role="img" aria-labelledby="title description">
+  <title id="title">TickerQuest Family Portfolio League</title>
+  <desc id="description">Eight players, ten thousand dollars each, one champion.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#020b09"/>
+      <stop offset="0.58" stop-color="#03100d"/>
+      <stop offset="1" stop-color="#061b14"/>
+    </linearGradient>
+    <linearGradient id="chartFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b8ff65" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#b8ff65" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="mint" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d8ff9d"/>
+      <stop offset="1" stop-color="#71cf39"/>
+    </linearGradient>
+    <linearGradient id="lavender" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d1c8ff"/>
+      <stop offset="1" stop-color="#7464d8"/>
+    </linearGradient>
+    <linearGradient id="coral" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb19f"/>
+      <stop offset="1" stop-color="#df5d43"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="grid" width="86.6" height="86.6" patternUnits="userSpaceOnUse">
+      <path d="M86.6 0H0V86.6" fill="none" stroke="#b8ff65" stroke-opacity=".055" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1732" height="908" fill="url(#background)"/>
+  <rect x="29" y="29" width="1674" height="850" rx="30" fill="none" stroke="#b8ff65" stroke-opacity=".55" stroke-width="2"/>
+  <rect x="30" y="30" width="1672" height="848" rx="29" fill="url(#grid)"/>
+
+  <text x="866" y="214" fill="url(#mint)" font-family="Inter, Arial, sans-serif" font-size="145" font-weight="850" letter-spacing="-7" text-anchor="middle">TICKERQUEST</text>
+  <text x="866" y="304" fill="#dfece6" font-family="Inter, Arial, sans-serif" font-size="39" font-weight="760" letter-spacing="2" text-anchor="middle">
+    <tspan fill="#a99cf8">8 PLAYERS</tspan>
+    <tspan fill="#72867d">  ·  </tspan>
+    <tspan fill="#b8ff65">$10,000 EACH</tspan>
+    <tspan fill="#72867d">  ·  </tspan>
+    <tspan fill="#ff8a70">1 CHAMPION</tspan>
+  </text>
+
+  <path d="M176 620L312 562L430 593L554 496L682 538L820 421L930 468L1068 348L1177 397L1335 257"
+        fill="none" stroke="#b8ff65" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M176 620L312 562L430 593L554 496L682 538L820 421L930 468L1068 348L1177 397L1335 257V650H176Z"
+        fill="url(#chartFill)"/>
+  <path d="M1335 257l-15 53 58-37z" fill="#b8ff65" filter="url(#glow)"/>
+
+  <g opacity=".3" stroke="#b8ff65" stroke-width="2">
+    <path d="M116 650H1420"/>
+    <path d="M116 554H1420"/>
+    <path d="M116 458H1420"/>
+    <path d="M116 362H1420"/>
+  </g>
+
+  <g transform="translate(1450 355)" fill="none" stroke="#b8ff65" stroke-width="7" stroke-linejoin="round">
+    <path d="M25 0h110v49c0 68-28 102-55 102S25 117 25 49Z"/>
+    <path d="M25 18H0v33c0 43 28 59 52 62M135 18h25v33c0 43-28 59-52 62"/>
+    <path d="M80 151v49M39 208h82M22 233h116"/>
+    <path d="m80 40 10 22 25 2-19 17 6 25-22-13-22 13 6-25-19-17 25-2Z" fill="#b8ff65" stroke-width="3"/>
+  </g>
+
+  <g transform="translate(0 13)">
+    <g transform="translate(166 651)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#ff8a70" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#coral)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#coral)"/>
+    </g>
+    <g transform="translate(350 670)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#a99cf8" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#lavender)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#lavender)"/>
+    </g>
+    <g transform="translate(548 638)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#b8ff65" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#mint)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#mint)"/>
+    </g>
+    <g transform="translate(754 676)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#a99cf8" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#lavender)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#lavender)"/>
+    </g>
+    <g transform="translate(962 658)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#ff8a70" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#coral)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#coral)"/>
+    </g>
+    <g transform="translate(1166 679)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#b8ff65" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#mint)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#mint)"/>
+    </g>
+    <g transform="translate(1370 646)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#a99cf8" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#lavender)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#lavender)"/>
+    </g>
+    <g transform="translate(1555 668)">
+      <ellipse cx="0" cy="90" rx="75" ry="20" fill="#b8ff65" opacity=".14"/>
+      <circle cy="12" r="29" fill="url(#mint)"/>
+      <path d="M-54 83c5-35 25-53 54-53s49 18 54 53c-24 18-84 18-108 0Z" fill="url(#mint)"/>
+    </g>
+  </g>
+</svg>

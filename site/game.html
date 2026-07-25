@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#03100d" />
+    <meta
+      name="description"
+      content="An eight-player private family stock game with simulated trading, realistic tax accounting, and an after-tax leaderboard."
+    />
+    <meta property="og:title" content="TickerQuest — Family Portfolio League" />
+    <meta
+      property="og:description"
+      content="Eight seats. $10,000 each. One after-tax family champion."
+    />
+    <meta property="og:image" content="https://kleinlab-yale.github.io/stocks/og-game.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content="https://kleinlab-yale.github.io/stocks/og-game.png" />
+    <meta name="tickerquest-game-api" content="__GAME_API_URL__" />
+    <title>TickerQuest — Family Portfolio League</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>"
+    />
+    <link rel="stylesheet" href="./game.css" />
+    <script src="./game.js" defer></script>
+  </head>
+  <body>
+    <div class="game-ambient game-ambient-one" aria-hidden="true"></div>
+    <div class="game-ambient game-ambient-two" aria-hidden="true"></div>
+
+    <header class="game-header">
+      <a class="game-brand" href="./" aria-label="TickerQuest dashboard">
+        <span class="game-brand-mark" aria-hidden="true">TQ</span>
+        <span>TickerQuest</span>
+      </a>
+      <div class="game-header-tools">
+        <span class="game-session-chip" id="game-session-chip">
+          <span class="game-status-dot" aria-hidden="true"></span>
+          <span id="game-session-label">Family league</span>
+        </span>
+        <button class="quiet-button" id="role-switch" type="button" hidden>Switch view</button>
+        <a class="quiet-link" href="./">Market dashboard</a>
+      </div>
+    </header>
+
+    <main class="game-shell" id="game-root" aria-live="polite">
+      <section class="game-loading" aria-label="Loading family game">
+        <span></span><span></span><span></span>
+      </section>
+    </main>
+
+    <footer class="game-footer">
+      <strong>TickerQuest Family League</strong>
+      <span>Simulated money · Regular-market trading · Not financial or tax advice</span>
+    </footer>
+  </body>
+</html>

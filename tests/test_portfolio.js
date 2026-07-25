@@ -1,6 +1,8 @@
-const test = require("node:test");
-const assert = require("node:assert/strict");
-const Portfolio = require("../site/portfolio.js");
+import test from "node:test";
+import assert from "node:assert/strict";
+
+await import("../site/portfolio.js");
+const Portfolio = globalThis.TickerQuestPortfolio;
 
 test("aggregates multiple purchases into cost basis and total return", () => {
   const holding = {
