@@ -381,6 +381,20 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   cursor: pointer;
 }
 .trade-side button.active { background: var(--ink); color: white; }
+.ticker-entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+.ticker-entry input {
+  text-transform: uppercase;
+  font-weight: 780;
+  letter-spacing: .04em;
+}
+.ticker-entry .secondary-action {
+  min-height: 46px;
+  white-space: nowrap;
+}
 .trade-quote {
   display: flex;
   justify-content: space-between;

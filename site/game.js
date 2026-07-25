@@ -21,7 +21,9 @@
   let currentRole = "player";
   let snapshot = null;
   let tradeSide = "buy";
+  let tradeSymbol = "";
   let refreshTimer = null;
+  const checkedQuotes = new Map();
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
   const getStored = (kind) => (gameId ? localStorage.getItem(storageKey(kind)) : null);
@@ -392,9 +394,15 @@
       .filter((quote) => quote.priceCents)
       .map(
         (quote) =>
-          `<option value="${escapeHtml(quote.symbol)}">${escapeHtml(quote.symbol)} · ${money(quote.priceCents)}</option>`,
+          `<option value="${escapeHtml(quote.symbol)}">${escapeHtml(quote.name)}</option>`,
       )
       .join("");
+    if (!tradeSymbol) {
+      tradeSymbol =
+        data.you?.holdings?.[0]?.symbol ??
+        data.market.symbols?.[0]?.symbol ??
+        "";
+    }
     return `
       <section class="panel trade-panel">
         <div class="panel-heading">
@@ -407,9 +415,16 @@
                   <button class="${tradeSide === "buy" ? "active" : ""}" type="button" data-action="trade-side" data-side="buy">Buy</button>
                   <button class="${tradeSide === "sell" ? "active" : ""}" type="button" data-action="trade-side" data-side="sell">Sell</button>
                 </div>
-                <label class="game-field"><span>Ticker</span><select name="symbol">${symbolOptions}</select></label>
+                <label class="game-field">
+                  <span>Any U.S. stock or ETF ticker</span>
+                  <div class="ticker-entry">
+                    <input name="symbol" list="game-ticker-options" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAPL" value="${escapeHtml(tradeSymbol)}" required>
+                    <button class="secondary-action" type="button" data-action="get-quote">Check price</button>
+                  </div>
+                  <datalist id="game-ticker-options">${symbolOptions}</datalist>
+                </label>
                 <label class="game-field"><span>Shares</span><input name="shares" type="number" min="0.000001" step="0.000001" inputmode="decimal" placeholder="0" required></label>
-                <div class="market-closed">Orders are available anytime using the newest shared quote: ${escapeHtml(data.market.sessionLabel)} · ${dateTime(data.market.generatedAt)}.</div>
+                <div class="market-closed" data-quote-context>Enter any ticker, then check its newest available price.</div>
                 <div class="trade-quote"><span>Latest available quote</span><strong data-trade-price>—</strong></div>
                 <div class="trade-summary">
                   <span>Estimated value<strong data-trade-value>$0.00</strong></span>
@@ -575,13 +590,19 @@
   function updateTradePreview() {
     const form = document.querySelector("#trade-form");
     if (!form || !snapshot) return;
-    const symbol = form.elements.symbol.value;
+    const symbol = form.elements.symbol.value.trim().toUpperCase();
+    tradeSymbol = symbol;
     const quantity = Number(form.elements.shares.value || 0);
-    const quote = snapshot.market.symbols.find((item) => item.symbol === symbol);
+    const quote =
+      checkedQuotes.get(symbol) ??
+      snapshot.market.symbols.find((item) => item.symbol === symbol);
     const holding = snapshot.you?.holdings?.find((item) => item.symbol === symbol);
     form.querySelector("[data-trade-price]").textContent = quote?.priceCents
       ? money(quote.priceCents)
-      : "Unavailable";
+      : "Check price";
+    form.querySelector("[data-quote-context]").textContent = quote
+      ? `${quote.name ?? symbol} · ${quote.source ?? snapshot.market.sessionLabel} · ${dateTime(quote.generatedAt ?? snapshot.market.generatedAt)}`
+      : "Enter any U.S.-listed stock or ETF ticker, then check its newest available price.";
     form.querySelector("[data-trade-value]").textContent =
       quote?.priceCents && quantity > 0
         ? money(Math.round(quote.priceCents * quantity))
@@ -590,6 +611,19 @@
       tradeSide === "buy"
         ? money(snapshot.you?.spendableCashCents)
         : `${shares(holding?.shares)} shares`;
+  }
+
+  function rememberQuote(quote) {
+    tradeSymbol = quote.symbol;
+    checkedQuotes.set(quote.symbol, quote);
+    const existingIndex = snapshot.market.symbols.findIndex(
+      (item) => item.symbol === quote.symbol,
+    );
+    if (existingIndex >= 0) {
+      snapshot.market.symbols[existingIndex] = quote;
+    } else {
+      snapshot.market.symbols.push(quote);
+    }
   }
 
   async function refresh({ quiet = false } = {}) {
@@ -699,11 +733,32 @@
       } else if (form.id === "trade-form") {
         setFormStatus(form, "Checking the live game quote…");
         const values = new FormData(form);
+        const symbol = String(values.get("symbol") ?? "")
+          .trim()
+          .toUpperCase();
+        const knownQuote =
+          checkedQuotes.get(symbol) ??
+          snapshot.market.symbols.find((item) => item.symbol === symbol);
+        if (!knownQuote) {
+          const quoted = await apiRequest("POST", {
+            action: "quote",
+            gameId,
+            symbol,
+          });
+          rememberQuote(quoted.quote);
+          form.elements.symbol.value = quoted.quote.symbol;
+          updateTradePreview();
+          setFormStatus(
+            form,
+            `${quoted.quote.name} is ${money(quoted.quote.priceCents)} as of ${dateTime(quoted.quote.generatedAt)}. Review it, then press ${tradeSide === "buy" ? "Buy" : "Sell"} again.`,
+          );
+          return;
+        }
         const result = await apiRequest("POST", {
           action: "trade",
           gameId,
           side: tradeSide,
-          symbol: values.get("symbol"),
+          symbol,
           shares: values.get("shares"),
         });
         await refresh({ quiet: true });
@@ -720,6 +775,9 @@
   });
 
   root.addEventListener("input", (event) => {
+    if (event.target.name === "symbol") {
+      event.target.value = event.target.value.toUpperCase();
+    }
     if (event.target.closest("#trade-form")) updateTradePreview();
   });
 
@@ -781,8 +839,29 @@
       } else if (action === "trade-side") {
         tradeSide = button.dataset.side === "sell" ? "sell" : "buy";
         renderGame(snapshot);
+      } else if (action === "get-quote") {
+        const form = button.closest("#trade-form");
+        const symbol = form?.elements.symbol.value.trim().toUpperCase();
+        if (!symbol) throw new Error("Enter a ticker first.");
+        button.disabled = true;
+        setFormStatus(form, `Checking the latest price for ${symbol}…`);
+        const result = await apiRequest("POST", {
+          action: "quote",
+          gameId,
+          symbol,
+        });
+        tradeSymbol = result.quote.symbol;
+        form.elements.symbol.value = result.quote.symbol;
+        rememberQuote(result.quote);
+        updateTradePreview();
+        setFormStatus(
+          form,
+          `${result.quote.name} · ${money(result.quote.priceCents)} as of ${dateTime(result.quote.generatedAt)}.`,
+        );
+        button.disabled = false;
       } else if (action === "sell-holding") {
         tradeSide = "sell";
+        tradeSymbol = button.dataset.symbol;
         renderGame(snapshot);
         const form = document.querySelector("#trade-form");
         if (form) {

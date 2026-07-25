@@ -14,6 +14,7 @@ export const dynamic = "force-dynamic";
 
 const MARKET_URL =
   "https://kleinlab-yale.github.io/stocks/data/market.json";
+const NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote";
 const STATIC_ORIGIN = "https://kleinlab-yale.github.io";
 const ALLOWED_ORIGINS = new Set([
   STATIC_ORIGIN,
@@ -25,6 +26,7 @@ const TAX_RATE_BPS = 2_400;
 const MAX_SEATS = 8;
 const WASH_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_EXECUTION_QUOTE_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
+const QUOTE_MEMORY_TTL_MS = 60 * 1_000;
 
 type GameRow = {
   id: string;
@@ -84,6 +86,45 @@ type MarketSnapshot = {
   session?: { label?: string };
   symbols: MarketSymbol[];
 };
+
+type ResolvedQuote = {
+  symbol: string;
+  name: string;
+  priceCents: number;
+  previousCloseCents: number | null;
+  generatedAt: string;
+  source: string;
+};
+
+type QuoteCacheRow = {
+  symbol: string;
+  name: string;
+  price_cents: number;
+  previous_close_cents: number | null;
+  quoted_at: number;
+  source: string;
+  updated_at: number;
+};
+
+type NasdaqInfoResponse = {
+  data?: {
+    symbol?: string;
+    companyName?: string;
+    primaryData?: {
+      lastSalePrice?: string;
+      lastTradeTimestamp?: string;
+    };
+    secondaryData?: {
+      lastSalePrice?: string;
+    } | null;
+  } | null;
+  status?: { rCode?: number };
+};
+
+const quoteMemoryCache = new Map<
+  string,
+  { expiresAt: number; quote: ResolvedQuote }
+>();
 
 class HttpError extends Error {
   status: number;
@@ -210,15 +251,7 @@ async function requirePlayer(
   return seat;
 }
 
-function quoteSnapshotIsExecutable(snapshot: MarketSnapshot) {
-  return quoteTimestampIsExecutable(
-    snapshot.generatedAt,
-    Date.now(),
-    MAX_EXECUTION_QUOTE_AGE_MS,
-  );
-}
-
-async function fetchMarket(requireExecutable = false) {
+async function fetchMarket() {
   const response = await fetch(`${MARKET_URL}?game=${Date.now()}`, {
     cache: "no-store",
   });
@@ -226,25 +259,188 @@ async function fetchMarket(requireExecutable = false) {
     throw new HttpError(503, "The shared market snapshot is unavailable.");
   }
   const snapshot = (await response.json()) as MarketSnapshot;
-  if (requireExecutable && !quoteSnapshotIsExecutable(snapshot)) {
-    throw new HttpError(
-      503,
-      "The latest shared quote is more than seven days old. Try again after the price feed refreshes.",
-    );
-  }
   return snapshot;
 }
 
-function priceFor(snapshot: MarketSnapshot, symbol: string) {
-  const quote = snapshot.symbols.find((item) => item.symbol === symbol);
-  const price = Number(quote?.price);
-  if (!quote || !Number.isFinite(price) || price <= 0) {
+function moneyStringToCents(value: unknown) {
+  const amount = Number(
+    String(value ?? "")
+      .replace(/[^0-9.-]/g, ""),
+  );
+  return Number.isFinite(amount) && amount > 0
+    ? Math.round(amount * 100)
+    : null;
+}
+
+function nasdaqTimestamp(value: unknown) {
+  const text = String(value ?? "").trim();
+  const normalized = text.replace(/\s+ET$/i, " GMT-0400");
+  const timestamp = Date.parse(normalized);
+  return Number.isFinite(timestamp) ? timestamp : Date.now();
+}
+
+function snapshotQuote(
+  snapshot: MarketSnapshot,
+  symbol: string,
+): ResolvedQuote | null {
+  const item = snapshot.symbols.find((candidate) => candidate.symbol === symbol);
+  const price = Number(item?.price);
+  if (!item || !Number.isFinite(price) || price <= 0) return null;
+  const previousClose = Number(item.previousClose);
+  return {
+    symbol,
+    name: item.name ?? symbol,
+    priceCents: Math.round(price * 100),
+    previousCloseCents:
+      Number.isFinite(previousClose) && previousClose > 0
+        ? Math.round(previousClose * 100)
+        : null,
+    generatedAt: snapshot.generatedAt,
+    source: "TickerQuest extended-hours feed",
+  };
+}
+
+async function cachedQuote(db: D1Database, symbol: string) {
+  const row = await db
+    .prepare("SELECT * FROM quote_cache WHERE symbol = ?")
+    .bind(symbol)
+    .first<QuoteCacheRow>();
+  if (!row) return null;
+  return {
+    quote: {
+      symbol: row.symbol,
+      name: row.name,
+      priceCents: row.price_cents,
+      previousCloseCents: row.previous_close_cents,
+      generatedAt: new Date(row.quoted_at).toISOString(),
+      source: row.source,
+    } satisfies ResolvedQuote,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function fetchNasdaqInfo(
+  symbol: string,
+  assetClass: "stocks" | "etf",
+): Promise<ResolvedQuote | null> {
+  const response = await fetch(
+    `${NASDAQ_QUOTE_URL}/${encodeURIComponent(symbol)}/info?assetclass=${assetClass}`,
+    {
+      cache: "no-store",
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "User-Agent": "Mozilla/5.0 TickerQuest/1.0",
+      },
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Nasdaq quote request returned ${response.status}.`);
+  }
+  const payload = (await response.json()) as NasdaqInfoResponse;
+  const priceCents = moneyStringToCents(
+    payload.data?.primaryData?.lastSalePrice,
+  );
+  if (
+    payload.status?.rCode !== 200 ||
+    !payload.data?.symbol ||
+    !priceCents
+  ) {
+    return null;
+  }
+  return {
+    symbol: cleanSymbol(payload.data.symbol),
+    name: cleanName(payload.data.companyName, symbol, 80),
+    priceCents,
+    previousCloseCents: moneyStringToCents(
+      payload.data.secondaryData?.lastSalePrice,
+    ),
+    generatedAt: new Date(
+      nasdaqTimestamp(payload.data.primaryData?.lastTradeTimestamp),
+    ).toISOString(),
+    source: "Nasdaq Last Sale",
+  };
+}
+
+async function resolveQuote(
+  db: D1Database,
+  symbol: string,
+  snapshot?: MarketSnapshot,
+) {
+  const configured = snapshot ? snapshotQuote(snapshot, symbol) : null;
+  if (configured) return configured;
+
+  const memory = quoteMemoryCache.get(symbol);
+  if (memory && memory.expiresAt > Date.now()) return memory.quote;
+  const persistent = await cachedQuote(db, symbol);
+  if (
+    persistent &&
+    persistent.updatedAt + QUOTE_MEMORY_TTL_MS > Date.now()
+  ) {
+    quoteMemoryCache.set(symbol, {
+      expiresAt: persistent.updatedAt + QUOTE_MEMORY_TTL_MS,
+      quote: persistent.quote,
+    });
+    return persistent.quote;
+  }
+
+  try {
+    const quote =
+      (await fetchNasdaqInfo(symbol, "stocks")) ??
+      (await fetchNasdaqInfo(symbol, "etf"));
+    if (!quote) {
+      throw new HttpError(
+        404,
+        `${symbol} was not found as a U.S.-listed stock or ETF.`,
+      );
+    }
+    await db
+      .prepare(
+        `INSERT INTO quote_cache (
+          symbol, name, price_cents, previous_close_cents,
+          quoted_at, source, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(symbol) DO UPDATE SET
+          name = excluded.name,
+          price_cents = excluded.price_cents,
+          previous_close_cents = excluded.previous_close_cents,
+          quoted_at = excluded.quoted_at,
+          source = excluded.source,
+          updated_at = excluded.updated_at`,
+      )
+      .bind(
+        quote.symbol,
+        quote.name,
+        quote.priceCents,
+        quote.previousCloseCents,
+        new Date(quote.generatedAt).getTime(),
+        quote.source,
+        Date.now(),
+      )
+      .run();
+    quoteMemoryCache.set(symbol, {
+      expiresAt: Date.now() + QUOTE_MEMORY_TTL_MS,
+      quote,
+    });
+    return quote;
+  } catch (error) {
+    const fallback = persistent ?? (await cachedQuote(db, symbol));
+    if (
+      fallback &&
+      quoteTimestampIsExecutable(
+        fallback.quote.generatedAt,
+        Date.now(),
+        MAX_EXECUTION_QUOTE_AGE_MS,
+      )
+    ) {
+      return fallback.quote;
+    }
+    if (error instanceof HttpError) throw error;
     throw new HttpError(
-      409,
-      `${symbol} is not available in the shared market feed.`,
+      503,
+      `The latest price for ${symbol} is temporarily unavailable.`,
     );
   }
-  return { quote, priceCents: Math.round(price * 100) };
 }
 
 async function createGame(request: Request, payload: Record<string, unknown>) {
@@ -666,6 +862,27 @@ async function sellStock(
   });
 }
 
+async function quoteStock(
+  request: Request,
+  payload: Record<string, unknown>,
+) {
+  const db = getD1();
+  const gameId = String(payload.gameId ?? "");
+  const seat = await requirePlayer(db, gameId, bearerToken(request));
+  if (!seat.player_name) {
+    throw new HttpError(409, "Claim your player seat before checking prices.");
+  }
+  const symbol = cleanSymbol(payload.symbol);
+  const snapshot = await fetchMarket();
+  const quote = await resolveQuote(db, symbol, snapshot);
+  return json(request, {
+    quote: {
+      ...quote,
+      sessionLabel: snapshot.session?.label ?? "Latest available",
+    },
+  });
+}
+
 async function trade(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
@@ -687,8 +904,21 @@ async function trade(request: Request, payload: Record<string, unknown>) {
     throw new HttpError(400, "Enter a share amount greater than zero.");
   }
   const side = payload.side === "sell" ? "sell" : "buy";
-  const snapshot = await fetchMarket(true);
-  const { priceCents } = priceFor(snapshot, symbol);
+  const snapshot = await fetchMarket();
+  const quote = await resolveQuote(db, symbol, snapshot);
+  if (
+    !quoteTimestampIsExecutable(
+      quote.generatedAt,
+      Date.now(),
+      MAX_EXECUTION_QUOTE_AGE_MS,
+    )
+  ) {
+    throw new HttpError(
+      503,
+      `The latest price for ${symbol} is more than seven days old.`,
+    );
+  }
+  const { priceCents } = quote;
   return side === "buy"
     ? buyStock(request, game, seat, symbol, sharesMicros, priceCents)
     : sellStock(request, game, seat, symbol, sharesMicros, priceCents);
@@ -745,12 +975,35 @@ async function gameState(request: Request) {
       )
       .bind(gameId)
       .all<Record<string, string | number | null>>(),
-    fetchMarket(false),
+    fetchMarket(),
   ]);
 
-  const quotes = new Map(
-    market.symbols.map((item) => [item.symbol, item]),
+  const configuredQuotes = market.symbols
+    .map((item) => snapshotQuote(market, item.symbol))
+    .filter((item): item is ResolvedQuote => Boolean(item));
+  const configuredSymbols = new Set(
+    configuredQuotes.map((item) => item.symbol),
   );
+  const additionalSymbols = [
+    ...new Set(
+      lotResult.results
+        .map((lot) => lot.symbol)
+        .filter((symbol) => !configuredSymbols.has(symbol)),
+    ),
+  ];
+  const additionalQuotes = (
+    await Promise.all(
+      additionalSymbols.map(async (symbol) => {
+        try {
+          return await resolveQuote(db, symbol);
+        } catch {
+          return null;
+        }
+      }),
+    )
+  ).filter((item): item is ResolvedQuote => Boolean(item));
+  const allQuotes = [...configuredQuotes, ...additionalQuotes];
+  const quotes = new Map(allQuotes.map((item) => [item.symbol, item]));
   const joinedSeats = seatResult.results.filter((seat) => seat.player_name);
   const leaderboard = joinedSeats
     .map((seat) => {
@@ -772,9 +1025,7 @@ async function gameState(request: Request) {
       });
       const holdings = [...bySymbol.entries()].map(([symbol, value]) => {
         const quote = quotes.get(symbol);
-        const price = Number(quote?.price);
-        const priceCents =
-          Number.isFinite(price) && price > 0 ? Math.round(price * 100) : 0;
+        const priceCents = quote?.priceCents ?? 0;
         const marketValueCents = grossCents(
           value.sharesMicros,
           priceCents,
@@ -827,12 +1078,6 @@ async function gameState(request: Request) {
     .map((player, index) => ({ ...player, rank: index + 1 }));
 
   const sessionLabel = market.session?.label ?? "Market unavailable";
-  const hasExecutablePrice = market.symbols.some((item) => {
-    const price = Number(item.price);
-    return Number.isFinite(price) && price > 0;
-  });
-  const quoteIsExecutable =
-    quoteSnapshotIsExecutable(market) && hasExecutablePrice;
   return json(request, {
     game: {
       id: game.id,
@@ -875,19 +1120,14 @@ async function gameState(request: Request) {
       mode: market.mode,
       sessionLabel,
       executionPolicy: "latest-available",
-      canTrade: game.status === "active" && quoteIsExecutable,
-      symbols: market.symbols.map((item) => ({
-        symbol: item.symbol,
-        name: item.name ?? item.symbol,
-        priceCents:
-          Number.isFinite(Number(item.price)) && Number(item.price) > 0
-            ? Math.round(Number(item.price) * 100)
-            : null,
-        previousCloseCents:
-          Number.isFinite(Number(item.previousClose)) &&
-          Number(item.previousClose) > 0
-            ? Math.round(Number(item.previousClose) * 100)
-            : null,
+      canTrade: game.status === "active",
+      symbols: allQuotes.map((quote) => ({
+        symbol: quote.symbol,
+        name: quote.name,
+        priceCents: quote.priceCents,
+        previousCloseCents: quote.previousCloseCents,
+        generatedAt: quote.generatedAt,
+        source: quote.source,
       })),
     },
   });
@@ -924,6 +1164,8 @@ export async function POST(request: Request) {
         return await endGame(request, payload);
       case "resetSeat":
         return await resetSeat(request, payload);
+      case "quote":
+        return await quoteStock(request, payload);
       case "trade":
         return await trade(request, payload);
       default:

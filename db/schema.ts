@@ -126,3 +126,13 @@ export const washLosses = sqliteTable(
     ),
   ],
 );
+
+export const quoteCache = sqliteTable("quote_cache", {
+  symbol: text("symbol").primaryKey(),
+  name: text("name").notNull(),
+  priceCents: integer("price_cents").notNull(),
+  previousCloseCents: integer("previous_close_cents"),
+  quotedAt: integer("quoted_at").notNull(),
+  source: text("source").notNull(),
+  updatedAt: integer("updated_at").notNull(),
+});
