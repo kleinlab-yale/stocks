@@ -27,6 +27,7 @@
   let trendSelection = "all";
   let trendRange = "day";
   let trendResizeTimer = null;
+  let serviceCapabilities = null;
   const checkedQuotes = new Map();
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
@@ -196,6 +197,9 @@
   }
 
   function renderGateway() {
+    const extendedDurations =
+      serviceCapabilities?.durationDays?.includes(365) &&
+      serviceCapabilities?.durationDays?.includes(0);
     setSession("Family league", true);
     roleSwitch.hidden = true;
     root.innerHTML = `
@@ -227,8 +231,7 @@
               <select name="durationDays">
                 <option value="7">One week</option>
                 <option value="30" selected>One month</option>
-                <option value="365">One year</option>
-                <option value="0">No end date</option>
+                ${extendedDurations ? '<option value="365">One year</option><option value="0">No end date</option>' : ""}
               </select>
             </label>
             <button class="primary-action mint" type="submit">Create eight-seat game</button>
@@ -518,6 +521,7 @@
         changePercent: trend.changePercent ?? 0,
         direction: trend.direction ?? "up",
       };
+    const supportsRanges = trends.some((trend) => trend.ranges);
     const playerButtons = trends
       .map((trend) => {
         const range = rangeFor(trend);
@@ -571,13 +575,19 @@
           </div>
           <p>After-tax value · updated every 30 minutes</p>
         </div>
-        <div class="period-leaders">
-          ${periodLeader("Daily leader", data.periodLeaders?.day)}
-          ${periodLeader("Weekly leader", data.periodLeaders?.week)}
-        </div>
-        <div class="trend-range-tabs" role="group" aria-label="Choose trend time range">
-          ${rangeButtons}
-        </div>
+        ${
+          data.periodLeaders?.day || data.periodLeaders?.week
+            ? `<div class="period-leaders">
+                ${periodLeader("Daily leader", data.periodLeaders?.day)}
+                ${periodLeader("Weekly leader", data.periodLeaders?.week)}
+              </div>`
+            : ""
+        }
+        ${
+          supportsRanges
+            ? `<div class="trend-range-tabs" role="group" aria-label="Choose trend time range">${rangeButtons}</div>`
+            : ""
+        }
         <div class="trend-toolbar" role="group" aria-label="Choose player trend lines">
           <button
             class="trend-chip all${trendSelection === "all" ? " active" : ""}"
@@ -868,6 +878,12 @@
   async function refresh({ quiet = false } = {}) {
     if (quiet && refreshInFlight) return;
     if (!gameId) {
+      try {
+        const health = await apiRequest("POST", { action: "health" });
+        serviceCapabilities = health.capabilities ?? null;
+      } catch {
+        serviceCapabilities = null;
+      }
       renderGateway();
       return;
     }

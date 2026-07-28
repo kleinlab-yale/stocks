@@ -852,6 +852,11 @@ async function health(request: Request) {
   return json(request, {
     ok: result?.ok === 1,
     service: "tickerquest-family-game",
+    capabilities: {
+      durationDays: [7, 30, 365, 0],
+      trendRanges: ["day", "week", "month", "max"],
+      periodLeaders: ["day", "week"],
+    },
   });
 }
 
