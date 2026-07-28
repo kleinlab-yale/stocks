@@ -31,6 +31,8 @@ const QUOTE_MEMORY_TTL_MS = 60 * 1_000;
 const MARKET_MEMORY_TTL_MS = 30 * 1_000;
 const MARKET_FETCH_TIMEOUT_MS = 6 * 1_000;
 const QUOTE_FETCH_TIMEOUT_MS = 6 * 1_000;
+const PORTFOLIO_SNAPSHOT_INTERVAL_MS = 30 * 60 * 1_000;
+const MAX_TREND_POINTS = 120;
 
 type GameRow = {
   id: string;
@@ -108,6 +110,12 @@ type QuoteCacheRow = {
   quoted_at: number;
   source: string;
   updated_at: number;
+};
+
+type PortfolioSnapshotRow = {
+  seat_id: string;
+  after_tax_cents: number;
+  captured_at: number;
 };
 
 type NasdaqInfoResponse = {
@@ -505,6 +513,132 @@ function refreshQuotesInBackground(
     pendingSymbols.forEach((symbol) => quoteRefreshesInFlight.delete(symbol));
   });
   context.waitUntil(refresh);
+}
+
+async function recordAndLoadPortfolioTrends(
+  db: D1Database,
+  game: GameRow,
+  seats: SeatRow[],
+  leaderboard: Array<{
+    seatId: string;
+    playerName: string | null;
+    afterTaxCents: number;
+  }>,
+) {
+  if (!game.started_at || !leaderboard.length) return [];
+  const observedAt =
+    game.status === "ended" && game.ended_at
+      ? game.ended_at
+      : Date.now();
+  const currentBucket = Math.floor(
+    observedAt / PORTFOLIO_SNAPSHOT_INTERVAL_MS,
+  );
+  const seatsById = new Map(seats.map((seat) => [seat.id, seat]));
+  const statements: D1PreparedStatement[] = [];
+
+  leaderboard.forEach((player) => {
+    const seat = seatsById.get(player.seatId);
+    if (!seat) return;
+    const baselineAt = Math.max(
+      game.started_at ?? game.created_at,
+      seat.joined_at ?? 0,
+    );
+    const currentCapturedAt =
+      game.status === "ended"
+        ? observedAt
+        : Math.max(
+            currentBucket * PORTFOLIO_SNAPSHOT_INTERVAL_MS,
+            baselineAt + 1,
+          );
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO portfolio_snapshots (
+            id, game_id, seat_id, bucket_start, after_tax_cents, captured_at
+          ) VALUES (?, ?, ?, 0, ?, ?)
+          ON CONFLICT(seat_id, bucket_start) DO NOTHING`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          game.id,
+          player.seatId,
+          game.starting_cash_cents,
+          baselineAt,
+        ),
+      db
+        .prepare(
+          `INSERT INTO portfolio_snapshots (
+            id, game_id, seat_id, bucket_start, after_tax_cents, captured_at
+          ) VALUES (?, ?, ?, ?, ?, ?)
+          ON CONFLICT(seat_id, bucket_start) DO UPDATE SET
+            after_tax_cents = excluded.after_tax_cents,
+            captured_at = excluded.captured_at
+          WHERE portfolio_snapshots.after_tax_cents
+            <> excluded.after_tax_cents`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          game.id,
+          player.seatId,
+          currentBucket,
+          player.afterTaxCents,
+          currentCapturedAt,
+        ),
+    );
+  });
+  if (statements.length) await db.batch(statements);
+
+  const snapshots = await db
+    .prepare(
+      `SELECT seat_id, after_tax_cents, captured_at
+       FROM (
+         SELECT
+           seat_id,
+           bucket_start,
+           after_tax_cents,
+           captured_at,
+           ROW_NUMBER() OVER (
+             PARTITION BY seat_id
+             ORDER BY captured_at DESC
+           ) AS point_rank
+         FROM portfolio_snapshots
+         WHERE game_id = ?
+       )
+       WHERE bucket_start = 0 OR point_rank <= ?
+       ORDER BY seat_id, captured_at`,
+    )
+    .bind(game.id, MAX_TREND_POINTS - 1)
+    .all<PortfolioSnapshotRow>();
+  const pointsBySeat = new Map<
+    string,
+    Array<{ at: number; valueCents: number }>
+  >();
+  snapshots.results.forEach((row) => {
+    const points = pointsBySeat.get(row.seat_id) ?? [];
+    points.push({
+      at: row.captured_at,
+      valueCents: row.after_tax_cents,
+    });
+    pointsBySeat.set(row.seat_id, points);
+  });
+
+  return leaderboard.map((player) => {
+    const points = pointsBySeat.get(player.seatId) ?? [];
+    const firstValue = points[0]?.valueCents ?? game.starting_cash_cents;
+    const lastValue =
+      points.at(-1)?.valueCents ?? player.afterTaxCents;
+    const changeCents = lastValue - firstValue;
+    return {
+      seatId: player.seatId,
+      playerName: player.playerName,
+      points,
+      changeCents,
+      changePercent: firstValue
+        ? (changeCents / firstValue) * 100
+        : 0,
+      direction: changeCents >= 0 ? "up" : "down",
+    };
+  });
 }
 
 async function createGame(request: Request, payload: Record<string, unknown>) {
@@ -1131,6 +1265,12 @@ async function gameState(request: Request) {
     })
     .sort((a, b) => b.afterTaxCents - a.afterTaxCents)
     .map((player, index) => ({ ...player, rank: index + 1 }));
+  const playerTrends = await recordAndLoadPortfolioTrends(
+    db,
+    game,
+    seatResult.results,
+    leaderboard,
+  );
 
   const sessionLabel = market.session?.label ?? "Market unavailable";
   return json(request, {
@@ -1160,6 +1300,7 @@ async function gameState(request: Request) {
       joined: Boolean(seat.player_name),
     })),
     leaderboard,
+    playerTrends,
     recentTrades: tradeResult.results.map((row) => ({
       id: row.id,
       playerName: row.player_name,

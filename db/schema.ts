@@ -136,3 +136,29 @@ export const quoteCache = sqliteTable("quote_cache", {
   source: text("source").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const portfolioSnapshots = sqliteTable(
+  "portfolio_snapshots",
+  {
+    id: text("id").primaryKey(),
+    gameId: text("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    seatId: text("seat_id")
+      .notNull()
+      .references(() => seats.id, { onDelete: "cascade" }),
+    bucketStart: integer("bucket_start").notNull(),
+    afterTaxCents: integer("after_tax_cents").notNull(),
+    capturedAt: integer("captured_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("portfolio_snapshots_seat_bucket_unique").on(
+      table.seatId,
+      table.bucketStart,
+    ),
+    index("portfolio_snapshots_game_time_idx").on(
+      table.gameId,
+      table.capturedAt,
+    ),
+  ],
+);

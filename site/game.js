@@ -24,6 +24,8 @@
   let tradeSymbol = "";
   let refreshTimer = null;
   let refreshInFlight = false;
+  let trendSelection = "all";
+  let trendResizeTimer = null;
   const checkedQuotes = new Map();
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
@@ -58,6 +60,15 @@
   function percent(value) {
     const amount = Number(value || 0);
     return `${amount >= 0 ? "+" : "−"}${Math.abs(amount).toFixed(2)}%`;
+  }
+
+  function compactMoney(cents) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(Number(cents || 0) / 100);
   }
 
   function shares(value) {
@@ -480,6 +491,171 @@
       .join("")}</div>`;
   }
 
+  function renderPlayerTrends(data) {
+    const trends = data.playerTrends ?? [];
+    if (!trends.length) return "";
+    if (
+      trendSelection !== "all" &&
+      !trends.some((trend) => trend.seatId === trendSelection)
+    ) {
+      trendSelection = "all";
+    }
+    const playerButtons = trends
+      .map(
+        (trend) => `
+          <button
+            class="trend-chip ${trend.direction}${trendSelection === trend.seatId ? " active" : ""}"
+            type="button"
+            data-action="trend-player"
+            data-seat="${escapeHtml(trend.seatId)}"
+            aria-pressed="${trendSelection === trend.seatId}"
+          >
+            <span class="trend-chip-dot" aria-hidden="true"></span>
+            <span>${escapeHtml(trend.playerName)}</span>
+            <strong>${percent(trend.changePercent)}</strong>
+          </button>
+        `,
+      )
+      .join("");
+    return `
+      <section class="panel trend-panel">
+        <div class="panel-heading trend-heading">
+          <div>
+            <p class="eyebrow">Portfolio history</p>
+            <h2>Player trends</h2>
+          </div>
+          <p>After-tax value · updated every 30 minutes</p>
+        </div>
+        <div class="trend-toolbar" role="group" aria-label="Choose player trend lines">
+          <button
+            class="trend-chip all${trendSelection === "all" ? " active" : ""}"
+            type="button"
+            data-action="trend-player"
+            data-seat="all"
+            aria-pressed="${trendSelection === "all"}"
+          >
+            <span class="trend-chip-stack" aria-hidden="true"></span>
+            <span>All players</span>
+          </button>
+          ${playerButtons}
+        </div>
+        <div class="trend-chart-shell">
+          <canvas
+            class="trend-canvas"
+            id="player-trend-chart"
+            role="img"
+            aria-label="After-tax portfolio value trend lines for the family game"
+          ></canvas>
+        </div>
+        <p class="trend-note"><span class="trend-key up"></span> Green is above the player’s starting value. <span class="trend-key down"></span> Red is below it. Tap a player to isolate their line.</p>
+      </section>
+    `;
+  }
+
+  function drawPlayerTrends(data) {
+    const canvas = document.querySelector("#player-trend-chart");
+    if (!canvas) return;
+    const allTrends = data.playerTrends ?? [];
+    const trends =
+      trendSelection === "all"
+        ? allTrends
+        : allTrends.filter((trend) => trend.seatId === trendSelection);
+    const chartPoints = trends.flatMap((trend) => trend.points ?? []);
+    if (!chartPoints.length) return;
+
+    const bounds = canvas.getBoundingClientRect();
+    const width = Math.max(280, Math.round(bounds.width));
+    const height = Math.max(170, Math.round(bounds.height));
+    const ratio = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = Math.round(width * ratio);
+    canvas.height = Math.round(height * ratio);
+    const context = canvas.getContext("2d");
+    context.setTransform(ratio, 0, 0, ratio, 0, 0);
+    context.clearRect(0, 0, width, height);
+
+    const padding = { top: 16, right: 14, bottom: 25, left: 54 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+    const values = chartPoints.map((point) => Number(point.valueCents));
+    const times = chartPoints.map((point) => Number(point.at));
+    let minimum = Math.min(...values);
+    let maximum = Math.max(...values);
+    const valueRange = Math.max(maximum - minimum, 20_000);
+    minimum -= valueRange * 0.1;
+    maximum += valueRange * 0.1;
+    const timeStart = Math.min(...times);
+    const timeEnd = Math.max(...times);
+    const timeRange = Math.max(timeEnd - timeStart, 1);
+    const xFor = (at) =>
+      padding.left + ((Number(at) - timeStart) / timeRange) * plotWidth;
+    const yFor = (value) =>
+      padding.top +
+      ((maximum - Number(value)) / (maximum - minimum)) * plotHeight;
+
+    context.font =
+      '600 9px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    context.textBaseline = "middle";
+    for (let line = 0; line < 4; line += 1) {
+      const progress = line / 3;
+      const y = padding.top + plotHeight * progress;
+      const value = maximum - (maximum - minimum) * progress;
+      context.beginPath();
+      context.strokeStyle = "rgba(207, 230, 220, 0.13)";
+      context.lineWidth = 1;
+      context.moveTo(padding.left, y);
+      context.lineTo(width - padding.right, y);
+      context.stroke();
+      context.fillStyle = "rgba(202, 219, 211, 0.58)";
+      context.textAlign = "right";
+      context.fillText(compactMoney(value), padding.left - 8, y);
+    }
+
+    const dashPatterns = [[], [8, 4], [2, 3], [11, 4, 2, 4]];
+    trends.forEach((trend, index) => {
+      const points = trend.points ?? [];
+      if (!points.length) return;
+      const isYou = data.you?.seatId === trend.seatId;
+      context.beginPath();
+      points.forEach((point, pointIndex) => {
+        const x = xFor(point.at);
+        const y = yFor(point.valueCents);
+        if (pointIndex === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      });
+      context.strokeStyle =
+        trend.direction === "up" ? "#77e35a" : "#ff6472";
+      context.globalAlpha =
+        trendSelection !== "all" || isYou || !data.you ? 1 : 0.66;
+      context.lineWidth = isYou && trendSelection === "all" ? 3.2 : 2.2;
+      context.lineCap = "round";
+      context.lineJoin = "round";
+      context.setLineDash(dashPatterns[index % dashPatterns.length]);
+      context.stroke();
+
+      const lastPoint = points.at(-1);
+      context.setLineDash([]);
+      context.beginPath();
+      context.arc(
+        xFor(lastPoint.at),
+        yFor(lastPoint.valueCents),
+        isYou ? 4 : 3,
+        0,
+        Math.PI * 2,
+      );
+      context.fillStyle =
+        trend.direction === "up" ? "#77e35a" : "#ff6472";
+      context.fill();
+    });
+    context.globalAlpha = 1;
+    context.setLineDash([]);
+    context.fillStyle = "rgba(202, 219, 211, 0.58)";
+    context.textBaseline = "bottom";
+    context.textAlign = "left";
+    context.fillText(dateTime(timeStart), padding.left, height - 3);
+    context.textAlign = "right";
+    context.fillText(dateTime(timeEnd), width - padding.right, height - 3);
+  }
+
   function renderActivity(trades) {
     if (!trades.length) {
       return `<div class="empty-compact">Trades will appear here for the whole family.</div>`;
@@ -554,6 +730,7 @@
           <small>${data.game.status === "ended" ? "Game complete" : `Ends ${dateTime(data.game.endsAt)}`}</small>
         </div>
       </section>
+      ${renderPlayerTrends(data)}
       <div class="game-layout">
         <div>
           ${
@@ -586,6 +763,7 @@
       ${renderRules()}
     `;
     updateTradePreview();
+    drawPlayerTrends(data);
   }
 
   function updateTradePreview() {
@@ -844,6 +1022,14 @@
       } else if (action === "trade-side") {
         tradeSide = button.dataset.side === "sell" ? "sell" : "buy";
         renderGame(snapshot);
+      } else if (action === "trend-player") {
+        trendSelection = button.dataset.seat || "all";
+        document.querySelectorAll(".trend-chip").forEach((chip) => {
+          const isActive = chip.dataset.seat === trendSelection;
+          chip.classList.toggle("active", isActive);
+          chip.setAttribute("aria-pressed", String(isActive));
+        });
+        drawPlayerTrends(snapshot);
       } else if (action === "get-quote") {
         const form = button.closest("#trade-form");
         const symbol = form?.elements.symbol.value.trim().toUpperCase();
@@ -922,5 +1108,13 @@
 
   window.addEventListener("beforeunload", () => {
     if (refreshTimer) window.clearInterval(refreshTimer);
+    if (trendResizeTimer) window.clearTimeout(trendResizeTimer);
+  });
+
+  window.addEventListener("resize", () => {
+    if (trendResizeTimer) window.clearTimeout(trendResizeTimer);
+    trendResizeTimer = window.setTimeout(() => {
+      if (snapshot) drawPlayerTrends(snapshot);
+    }, 120);
   });
 })();

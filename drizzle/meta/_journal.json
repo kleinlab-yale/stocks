@@ -15,6 +15,13 @@
       "when": 1785022186782,
       "tag": "0001_lush_iron_lad",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785239230590,
+      "tag": "0002_military_human_robot",
+      "breakpoints": true
     }
   ]
 }

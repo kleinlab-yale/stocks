@@ -362,6 +362,84 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .positive { color: #287b28 !important; }
 .negative { color: #bd4935 !important; }
 
+.trend-panel { margin-top: 14px; overflow: hidden; }
+.trend-heading { margin-bottom: 11px; }
+.trend-toolbar {
+  display: flex;
+  gap: 7px;
+  margin: 0 -4px 11px;
+  padding: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.trend-toolbar::-webkit-scrollbar { display: none; }
+.trend-chip {
+  min-height: 35px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-bright);
+  color: #68736f;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.trend-chip strong { color: var(--ink); font-size: 8px; }
+.trend-chip.active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 8px 20px rgba(7,17,15,.13);
+}
+.trend-chip.active strong { color: white; }
+.trend-chip-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.trend-chip.up .trend-chip-dot { background: #55bd3b; }
+.trend-chip.down .trend-chip-dot { background: #e05260; }
+.trend-chip-stack {
+  width: 13px;
+  height: 10px;
+  border-top: 2px solid #55bd3b;
+  border-bottom: 2px solid #e05260;
+  transform: skewY(-18deg);
+}
+.trend-chart-shell {
+  padding: 7px 7px 2px;
+  border: 1px solid rgba(190,224,211,.12);
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 88% 12%, rgba(184,255,101,.08), transparent 30%),
+    #07110f;
+}
+.trend-canvas {
+  width: 100%;
+  height: 225px;
+  display: block;
+}
+.trend-note {
+  margin: 9px 2px 0;
+  color: #76817c;
+  font-size: 8px;
+  line-height: 1.45;
+}
+.trend-key {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  margin: 0 2px 0 6px;
+  border-radius: 50%;
+}
+.trend-key:first-child { margin-left: 0; }
+.trend-key.up { background: #55bd3b; }
+.trend-key.down { background: #e05260; }
+
 .trade-side {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -624,6 +702,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .game-board-metric > span, .game-board-metric small { font-size: 6px; }
   .panel { padding: 14px; border-radius: 17px; }
   .panel-heading h2, .section-heading h2 { font-size: 21px; }
+  .trend-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .trend-canvas { height: 185px; }
   .holding-card { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .holding-symbol { grid-column: 1 / 3; }
   .holding-card button { grid-column: 3; grid-row: 1; }
