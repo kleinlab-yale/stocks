@@ -6,9 +6,11 @@ import {
   allocateFifoSale,
   applyPendingWashLosses,
   grossCents,
+  gameEndsAt,
   quoteTimestampIsExecutable,
   sharesToMicros,
   taxReserveCents,
+  tradingIsActive,
 } from "../lib/game-rules.js";
 
 test("converts fractional shares and values a trade in cents", () => {
@@ -131,4 +133,20 @@ test("blocks execution when the shared quote is more than seven days old", () =>
   const now = Date.parse("2026-07-25T16:00:00Z");
   const oldQuote = "2026-07-17T15:59:59Z";
   assert.equal(quoteTimestampIsExecutable(oldQuote, now), false);
+});
+
+test("supports year-long and no-end game schedules", () => {
+  const startedAt = Date.parse("2026-07-28T12:00:00Z");
+  assert.equal(
+    gameEndsAt(startedAt, 365),
+    startedAt + 365 * 24 * 60 * 60 * 1_000,
+  );
+  assert.equal(gameEndsAt(startedAt, 0), null);
+});
+
+test("keeps trading active when an active game has no end date", () => {
+  const now = Date.parse("2026-07-28T12:00:00Z");
+  assert.equal(tradingIsActive("active", null, now), true);
+  assert.equal(tradingIsActive("ended", null, now), false);
+  assert.equal(tradingIsActive("active", now - 1, now), false);
 });

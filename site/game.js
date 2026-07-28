@@ -25,6 +25,7 @@
   let refreshTimer = null;
   let refreshInFlight = false;
   let trendSelection = "all";
+  let trendRange = "day";
   let trendResizeTimer = null;
   const checkedQuotes = new Map();
 
@@ -87,9 +88,17 @@
     }).format(new Date(value));
   }
 
+  function gameLength(game) {
+    if (Number(game.durationDays) === 0) return "No-end game";
+    if (Number(game.durationDays) === 365) return "One-year game";
+    if (Number(game.durationDays) === 30) return "One-month game";
+    return "One-week game";
+  }
+
   function countdown(game) {
-    if (game.status === "lobby") return `${game.durationDays}-day game`;
+    if (game.status === "lobby") return gameLength(game);
     if (game.status === "ended") return "Final standings";
+    if (!game.endsAt) return "No time limit";
     const remaining = Math.max(0, Number(game.endsAt) - Date.now());
     const days = Math.floor(remaining / 86_400_000);
     const hours = Math.floor((remaining % 86_400_000) / 3_600_000);
@@ -195,7 +204,7 @@
           <div>
             <p class="eyebrow">Private family portfolio league</p>
             <h1>Eight seats.<br>One champion.</h1>
-            <p>Start everyone with the same $10,000, trade real market prices, and settle the leaderboard after a week or a month.</p>
+            <p>Start everyone with the same $10,000, trade real market prices, and compete for a week, month, year, or with no finish line.</p>
           </div>
           <div class="gateway-rules">
             <span><strong>$10,000</strong><small>Simulated starting cash</small></span>
@@ -218,6 +227,8 @@
               <select name="durationDays">
                 <option value="7">One week</option>
                 <option value="30" selected>One month</option>
+                <option value="365">One year</option>
+                <option value="0">No end date</option>
               </select>
             </label>
             <button class="primary-action mint" type="submit">Create eight-seat game</button>
@@ -277,7 +288,7 @@
           <div class="seat-badge">#${escapeHtml(data.you.seatNumber)}</div>
           <p class="eyebrow">${escapeHtml(data.game.name)}</p>
           <h1>You’re in, ${escapeHtml(data.you.playerName)}.</h1>
-          <p>The host will start the ${data.game.durationDays}-day game after at least one more family member joins.</p>
+          <p>The host will start this ${gameLength(data.game).toLowerCase()} after at least one more family member joins.</p>
           <div class="lobby-progress"><span style="width:${width}%"></span></div>
           <p class="fine-print">${joined} of 8 seats claimed · This page refreshes automatically</p>
           <button class="secondary-action" type="button" data-action="refresh" style="width:100%;margin-top:16px">Check the lobby</button>
@@ -336,7 +347,7 @@
         <div class="game-title">
           <span class="state-pill">Lobby</span>
           <h1>${escapeHtml(data.game.name)}</h1>
-          <p>${data.game.durationDays}-day game · $10,000 per player · 24% simulated short-term tax</p>
+          <p>${gameLength(data.game)} · $10,000 per player · 24% simulated short-term tax</p>
         </div>
         <div class="game-actions">
           <button class="secondary-action" type="button" data-action="refresh">Refresh lobby</button>
@@ -500,11 +511,19 @@
     ) {
       trendSelection = "all";
     }
+    const rangeFor = (trend) =>
+      trend.ranges?.[trendRange] ?? {
+        points: trend.points ?? [],
+        changeCents: trend.changeCents ?? 0,
+        changePercent: trend.changePercent ?? 0,
+        direction: trend.direction ?? "up",
+      };
     const playerButtons = trends
-      .map(
-        (trend) => `
+      .map((trend) => {
+        const range = rangeFor(trend);
+        return `
           <button
-            class="trend-chip ${trend.direction}${trendSelection === trend.seatId ? " active" : ""}"
+            class="trend-chip ${range.direction}${trendSelection === trend.seatId ? " active" : ""}"
             type="button"
             data-action="trend-player"
             data-seat="${escapeHtml(trend.seatId)}"
@@ -512,11 +531,37 @@
           >
             <span class="trend-chip-dot" aria-hidden="true"></span>
             <span>${escapeHtml(trend.playerName)}</span>
-            <strong>${percent(trend.changePercent)}</strong>
+            <strong>${percent(range.changePercent)}</strong>
           </button>
+        `;
+      })
+      .join("");
+    const rangeButtons = [
+      ["day", "Day"],
+      ["week", "Week"],
+      ["month", "Month"],
+      ["max", "Max"],
+    ]
+      .map(
+        ([value, label]) => `
+          <button
+            class="${trendRange === value ? "active" : ""}"
+            type="button"
+            data-action="trend-range"
+            data-range="${value}"
+            aria-pressed="${trendRange === value}"
+          >${label}</button>
         `,
       )
       .join("");
+    const periodLeader = (label, leader) =>
+      leader
+        ? `<div class="period-leader">
+            <span>${label} · live</span>
+            <strong>${escapeHtml(leader.playerName)}</strong>
+            <small class="${gainClass(leader.changePercent)}">${percent(leader.changePercent)}</small>
+          </div>`
+        : "";
     return `
       <section class="panel trend-panel">
         <div class="panel-heading trend-heading">
@@ -525,6 +570,13 @@
             <h2>Player trends</h2>
           </div>
           <p>After-tax value · updated every 30 minutes</p>
+        </div>
+        <div class="period-leaders">
+          ${periodLeader("Daily leader", data.periodLeaders?.day)}
+          ${periodLeader("Weekly leader", data.periodLeaders?.week)}
+        </div>
+        <div class="trend-range-tabs" role="group" aria-label="Choose trend time range">
+          ${rangeButtons}
         </div>
         <div class="trend-toolbar" role="group" aria-label="Choose player trend lines">
           <button
@@ -547,7 +599,7 @@
             aria-label="After-tax portfolio value trend lines for the family game"
           ></canvas>
         </div>
-        <p class="trend-note"><span class="trend-key up"></span> Green is above the player’s starting value. <span class="trend-key down"></span> Red is below it. Tap a player to isolate their line.</p>
+        <p class="trend-note"><span class="trend-key up"></span> Green gained over the selected period. <span class="trend-key down"></span> Red declined. Tap a player to isolate their line.</p>
       </section>
     `;
   }
@@ -555,7 +607,15 @@
   function drawPlayerTrends(data) {
     const canvas = document.querySelector("#player-trend-chart");
     if (!canvas) return;
-    const allTrends = data.playerTrends ?? [];
+    const allTrends = (data.playerTrends ?? []).map((trend) => ({
+      ...trend,
+      ...(trend.ranges?.[trendRange] ?? {
+        points: trend.points ?? [],
+        changeCents: trend.changeCents ?? 0,
+        changePercent: trend.changePercent ?? 0,
+        direction: trend.direction ?? "up",
+      }),
+    }));
     const trends =
       trendSelection === "all"
         ? allTrends
@@ -727,7 +787,7 @@
         <div class="game-board-cell game-board-metric rank">
           <span>${you ? "Your rank" : "Time left"}</span>
           <strong>${you ? `#${you.rank} / ${joined}` : countdown(data.game)}</strong>
-          <small>${data.game.status === "ended" ? "Game complete" : `Ends ${dateTime(data.game.endsAt)}`}</small>
+          <small>${data.game.status === "ended" ? "Game complete" : data.game.endsAt ? `Ends ${dateTime(data.game.endsAt)}` : "No scheduled end"}</small>
         </div>
       </section>
       ${renderPlayerTrends(data)}
@@ -1030,6 +1090,13 @@
           chip.setAttribute("aria-pressed", String(isActive));
         });
         drawPlayerTrends(snapshot);
+      } else if (action === "trend-range") {
+        trendRange = ["day", "week", "month", "max"].includes(
+          button.dataset.range,
+        )
+          ? button.dataset.range
+          : "day";
+        renderGame(snapshot);
       } else if (action === "get-quote") {
         const form = button.closest("#trade-form");
         const symbol = form?.elements.symbol.value.trim().toUpperCase();

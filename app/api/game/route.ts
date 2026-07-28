@@ -4,11 +4,13 @@ import {
   afterTaxValueCents,
   allocateFifoSale,
   applyPendingWashLosses,
+  gameEndsAt,
   grossCents,
   microsToShares,
   quoteTimestampIsExecutable,
   sharesToMicros,
   taxReserveCents,
+  tradingIsActive,
 } from "@/lib/game-rules.js";
 
 export const dynamic = "force-dynamic";
@@ -113,6 +115,7 @@ type QuoteCacheRow = {
 };
 
 type PortfolioSnapshotRow = {
+  range_name: string;
   seat_id: string;
   after_tax_cents: number;
   captured_at: number;
@@ -525,7 +528,12 @@ async function recordAndLoadPortfolioTrends(
     afterTaxCents: number;
   }>,
 ) {
-  if (!game.started_at || !leaderboard.length) return [];
+  if (!game.started_at || !leaderboard.length) {
+    return {
+      playerTrends: [],
+      periodLeaders: { day: null, week: null },
+    };
+  }
   const observedAt =
     game.status === "ended" && game.ended_at
       ? game.ended_at
@@ -588,64 +596,195 @@ async function recordAndLoadPortfolioTrends(
   });
   if (statements.length) await db.batch(statements);
 
+  const gameAge = Math.max(1, observedAt - game.started_at);
+  const maxBucketMs =
+    Math.max(
+      1,
+      Math.ceil(
+        gameAge /
+          (MAX_TREND_POINTS - 1) /
+          PORTFOLIO_SNAPSHOT_INTERVAL_MS,
+      ),
+    ) * PORTFOLIO_SNAPSHOT_INTERVAL_MS;
+  const rangeSettings = [
+    {
+      name: "day",
+      sinceAt: Math.max(
+        game.started_at,
+        observedAt - 24 * 60 * 60 * 1_000,
+      ),
+      bucketMs: PORTFOLIO_SNAPSHOT_INTERVAL_MS,
+    },
+    {
+      name: "week",
+      sinceAt: Math.max(
+        game.started_at,
+        observedAt - 7 * 24 * 60 * 60 * 1_000,
+      ),
+      bucketMs: 2 * 60 * 60 * 1_000,
+    },
+    {
+      name: "month",
+      sinceAt: Math.max(
+        game.started_at,
+        observedAt - 30 * 24 * 60 * 60 * 1_000,
+      ),
+      bucketMs: 6 * 60 * 60 * 1_000,
+    },
+    {
+      name: "max",
+      sinceAt: game.started_at,
+      bucketMs: maxBucketMs,
+    },
+  ];
   const snapshots = await db
     .prepare(
-      `SELECT seat_id, after_tax_cents, captured_at
-       FROM (
+      `WITH range_settings(range_name, since_at, bucket_ms) AS (
+         VALUES (?, ?, ?), (?, ?, ?), (?, ?, ?), (?, ?, ?)
+       ),
+       bucketed AS (
          SELECT
-           seat_id,
-           bucket_start,
-           after_tax_cents,
-           captured_at,
+           ranges.range_name,
+           snapshots.seat_id,
+           snapshots.after_tax_cents,
+           snapshots.captured_at,
            ROW_NUMBER() OVER (
-             PARTITION BY seat_id
-             ORDER BY captured_at DESC
-           ) AS point_rank
-         FROM portfolio_snapshots
-         WHERE game_id = ?
+             PARTITION BY
+               ranges.range_name,
+               snapshots.seat_id,
+               CAST(snapshots.captured_at / ranges.bucket_ms AS INTEGER)
+             ORDER BY snapshots.captured_at DESC
+           ) AS bucket_rank
+         FROM portfolio_snapshots AS snapshots
+         JOIN range_settings AS ranges
+           ON snapshots.captured_at >= ranges.since_at
+         WHERE snapshots.game_id = ?
+           AND snapshots.bucket_start <> 0
+       ),
+       baselines AS (
+         SELECT
+           ranges.range_name,
+           snapshots.seat_id,
+           snapshots.after_tax_cents,
+           snapshots.captured_at
+         FROM portfolio_snapshots AS snapshots
+         JOIN range_settings AS ranges
+           ON snapshots.captured_at >= ranges.since_at
+         WHERE snapshots.game_id = ?
+           AND snapshots.bucket_start = 0
+       ),
+       anchors AS (
+         SELECT
+           ranges.range_name,
+           snapshots.seat_id,
+           snapshots.after_tax_cents,
+           ranges.since_at AS captured_at,
+           ROW_NUMBER() OVER (
+             PARTITION BY ranges.range_name, snapshots.seat_id
+             ORDER BY snapshots.captured_at DESC
+           ) AS anchor_rank
+         FROM portfolio_snapshots AS snapshots
+         JOIN range_settings AS ranges
+           ON snapshots.captured_at < ranges.since_at
+         WHERE snapshots.game_id = ?
        )
-       WHERE bucket_start = 0 OR point_rank <= ?
-       ORDER BY seat_id, captured_at`,
+       SELECT range_name, seat_id, after_tax_cents, captured_at
+       FROM bucketed
+       WHERE bucket_rank = 1
+       UNION ALL
+       SELECT range_name, seat_id, after_tax_cents, captured_at
+       FROM baselines
+       UNION ALL
+       SELECT range_name, seat_id, after_tax_cents, captured_at
+       FROM anchors
+       WHERE anchor_rank = 1
+       ORDER BY range_name, seat_id, captured_at`,
     )
-    .bind(game.id, MAX_TREND_POINTS - 1)
+    .bind(
+      ...rangeSettings.flatMap((range) => [
+        range.name,
+        range.sinceAt,
+        range.bucketMs,
+      ]),
+      game.id,
+      game.id,
+      game.id,
+    )
     .all<PortfolioSnapshotRow>();
   const pointsBySeat = new Map<
     string,
     Array<{ at: number; valueCents: number }>
   >();
   snapshots.results.forEach((row) => {
-    const points = pointsBySeat.get(row.seat_id) ?? [];
+    const key = `${row.range_name}:${row.seat_id}`;
+    const points = pointsBySeat.get(key) ?? [];
     points.push({
       at: row.captured_at,
       valueCents: row.after_tax_cents,
     });
-    pointsBySeat.set(row.seat_id, points);
+    pointsBySeat.set(key, points);
   });
 
-  return leaderboard.map((player) => {
-    const points = pointsBySeat.get(player.seatId) ?? [];
-    const firstValue = points[0]?.valueCents ?? game.starting_cash_cents;
-    const lastValue =
-      points.at(-1)?.valueCents ?? player.afterTaxCents;
-    const changeCents = lastValue - firstValue;
+  const playerTrends = leaderboard.map((player) => {
+    const ranges = Object.fromEntries(
+      rangeSettings.map((range) => {
+        const points =
+          pointsBySeat.get(`${range.name}:${player.seatId}`) ?? [];
+        const firstValue =
+          points[0]?.valueCents ?? game.starting_cash_cents;
+        const lastValue =
+          points.at(-1)?.valueCents ?? player.afterTaxCents;
+        const changeCents = lastValue - firstValue;
+        return [
+          range.name,
+          {
+            points,
+            changeCents,
+            changePercent: firstValue
+              ? (changeCents / firstValue) * 100
+              : 0,
+            direction: changeCents >= 0 ? "up" : "down",
+          },
+        ];
+      }),
+    );
     return {
       seatId: player.seatId,
       playerName: player.playerName,
-      points,
-      changeCents,
-      changePercent: firstValue
-        ? (changeCents / firstValue) * 100
-        : 0,
-      direction: changeCents >= 0 ? "up" : "down",
+      ranges,
     };
   });
+  const leaderFor = (rangeName: "day" | "week") => {
+    const leader = [...playerTrends].sort(
+      (left, right) =>
+        Number(right.ranges[rangeName].changePercent) -
+        Number(left.ranges[rangeName].changePercent),
+    )[0];
+    return leader
+      ? {
+          seatId: leader.seatId,
+          playerName: leader.playerName,
+          changePercent: leader.ranges[rangeName].changePercent,
+        }
+      : null;
+  };
+  return {
+    playerTrends,
+    periodLeaders: {
+      day: leaderFor("day"),
+      week: leaderFor("week"),
+    },
+  };
 }
 
 async function createGame(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = crypto.randomUUID();
   const hostToken = randomToken();
-  const durationDays = Number(payload.durationDays) === 7 ? 7 : 30;
+  const requestedDuration = Number(payload.durationDays);
+  const durationDays = [0, 7, 30, 365].includes(requestedDuration)
+    ? requestedDuration
+    : 30;
   const name = cleanName(payload.name, "Family Portfolio League");
   const createdAt = Date.now();
   const invitations: Array<{ seatNumber: number; token: string }> = [];
@@ -765,7 +904,7 @@ async function startGame(request: Request, payload: Record<string, unknown>) {
     throw new HttpError(409, "At least two family members must join first.");
   }
   const startedAt = Date.now();
-  const endsAt = startedAt + game.duration_days * 24 * 60 * 60 * 1_000;
+  const endsAt = gameEndsAt(startedAt, game.duration_days);
   await db
     .prepare(
       "UPDATE games SET status = 'active', started_at = ?, ends_at = ? WHERE id = ?",
@@ -1089,11 +1228,7 @@ async function trade(request: Request, payload: Record<string, unknown>) {
   if (!seat.player_name) {
     throw new HttpError(409, "Claim your player seat before trading.");
   }
-  if (
-    game.status !== "active" ||
-    !game.ends_at ||
-    Date.now() >= game.ends_at
-  ) {
+  if (!tradingIsActive(game.status, game.ends_at)) {
     throw new HttpError(409, "Trading is not active for this game.");
   }
   const symbol = cleanSymbol(payload.symbol);
@@ -1265,12 +1400,13 @@ async function gameState(request: Request) {
     })
     .sort((a, b) => b.afterTaxCents - a.afterTaxCents)
     .map((player, index) => ({ ...player, rank: index + 1 }));
-  const playerTrends = await recordAndLoadPortfolioTrends(
-    db,
-    game,
-    seatResult.results,
-    leaderboard,
-  );
+  const { playerTrends, periodLeaders } =
+    await recordAndLoadPortfolioTrends(
+      db,
+      game,
+      seatResult.results,
+      leaderboard,
+    );
 
   const sessionLabel = market.session?.label ?? "Market unavailable";
   return json(request, {
@@ -1301,6 +1437,7 @@ async function gameState(request: Request) {
     })),
     leaderboard,
     playerTrends,
+    periodLeaders,
     recentTrades: tradeResult.results.map((row) => ({
       id: row.id,
       playerName: row.player_name,

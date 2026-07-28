@@ -364,6 +364,56 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 
 .trend-panel { margin-top: 14px; overflow: hidden; }
 .trend-heading { margin-bottom: 11px; }
+.period-leaders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 9px;
+}
+.period-leader {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2px 10px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: #eeeee8;
+}
+.period-leader span {
+  grid-column: 1 / -1;
+  color: #75807b;
+  font-size: 7px;
+  font-weight: 850;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.period-leader strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.period-leader small { font-size: 9px; font-weight: 850; }
+.trend-range-tabs {
+  width: fit-content;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(50px, 1fr));
+  gap: 3px;
+  margin-bottom: 8px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #ebeae4;
+}
+.trend-range-tabs button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #69746f;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.trend-range-tabs button.active {
+  background: var(--ink);
+  color: white;
+  box-shadow: 0 4px 12px rgba(7,17,15,.12);
+}
 .trend-toolbar {
   display: flex;
   gap: 7px;
@@ -703,6 +753,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .panel { padding: 14px; border-radius: 17px; }
   .panel-heading h2, .section-heading h2 { font-size: 21px; }
   .trend-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .trend-range-tabs { width: 100%; }
   .trend-canvas { height: 185px; }
   .holding-card { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .holding-symbol { grid-column: 1 / 3; }
