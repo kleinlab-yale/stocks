@@ -16,6 +16,9 @@ export const games = sqliteTable("games", {
   durationDays: integer("duration_days").notNull(),
   targetValueCents: integer("target_value_cents"),
   winnerSeatId: text("winner_seat_id"),
+  periodBonusesEnabled: integer("period_bonuses_enabled")
+    .notNull()
+    .default(0),
   createdAt: integer("created_at").notNull(),
   startedAt: integer("started_at"),
   endsAt: integer("ends_at"),

@@ -57,6 +57,7 @@ type GameRow = {
   duration_days: number;
   target_value_cents: number | null;
   winner_seat_id: string | null;
+  period_bonuses_enabled: number;
   created_at: number;
   started_at: number | null;
   ends_at: number | null;
@@ -546,7 +547,13 @@ async function settlePeriodBonuses(
   db: D1Database,
   game: GameRow,
 ) {
-  if (!game.started_at || game.status === "lobby") return;
+  if (
+    !game.period_bonuses_enabled ||
+    !game.started_at ||
+    game.status === "lobby"
+  ) {
+    return;
+  }
   const competitionEnd = game.ended_at ?? game.ends_at;
 
   for (const periodType of ["day", "week", "month"] as const) {
@@ -1017,8 +1024,9 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
       .prepare(
         `INSERT INTO games (
           id, name, host_token_hash, status, starting_cash_cents,
-          tax_rate_bps, duration_days, target_value_cents, created_at
-        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?, ?)`,
+          tax_rate_bps, duration_days, target_value_cents,
+          period_bonuses_enabled, created_at
+        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?, 1, ?)`,
       )
       .bind(
         gameId,
@@ -1728,6 +1736,7 @@ async function gameState(request: Request) {
       startingCashCents: game.starting_cash_cents,
       targetValueCents: game.target_value_cents,
       winnerSeatId: game.winner_seat_id,
+      periodBonusesEnabled: Boolean(game.period_bonuses_enabled),
       taxRateBps: game.tax_rate_bps,
       createdAt: game.created_at,
       startedAt: game.started_at,

@@ -413,7 +413,7 @@
         <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
       </section>
       <section class="seat-grid">${cards}</section>
-      ${renderRules(Array.isArray(data.bonusAwards))}
+      ${renderRules(data.game.periodBonusesEnabled === true)}
     `;
   }
 
@@ -613,7 +613,8 @@
         `,
       )
       .join("");
-    const supportsBonuses = Array.isArray(data.bonusAwards);
+    const supportsBonuses =
+      data.game.periodBonusesEnabled === true;
     const periodLeader = (label, leader, bonus) =>
       leader
         ? `<div class="period-leader">
@@ -702,7 +703,12 @@
   }
 
   function renderBonusBank(data) {
-    if (!Array.isArray(data.bonusAwards)) return "";
+    if (
+      data.game.periodBonusesEnabled !== true ||
+      !Array.isArray(data.bonusAwards)
+    ) {
+      return "";
+    }
     const players = [...data.leaderboard].sort(
       (left, right) =>
         Number(right.bonusCents || 0) - Number(left.bonusCents || 0),
@@ -970,7 +976,7 @@
           ? `<section class="panel leaderboard-panel"><div class="panel-heading"><div><p class="eyebrow">League tape</p><h2>Recent activity</h2></div></div>${renderActivity(data.recentTrades)}</section>`
           : ""
       }
-      ${renderRules(Array.isArray(data.bonusAwards))}
+      ${renderRules(data.game.periodBonusesEnabled === true)}
     `;
     updateTradePreview();
     drawPlayerTrends(data);
