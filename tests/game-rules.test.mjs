@@ -5,10 +5,13 @@ import {
   afterTaxValueCents,
   allocateFifoSale,
   applyPendingWashLosses,
+  completedCompetitionPeriod,
   grossCents,
   gameEndsAt,
   quoteTimestampIsExecutable,
+  selectPeriodBonusWinner,
   sharesToMicros,
+  targetValueReached,
   taxReserveCents,
   tradingIsActive,
 } from "../lib/game-rules.js";
@@ -149,4 +152,63 @@ test("keeps trading active when an active game has no end date", () => {
   assert.equal(tradingIsActive("active", null, now), true);
   assert.equal(tradingIsActive("ended", null, now), false);
   assert.equal(tradingIsActive("active", now - 1, now), false);
+});
+
+test("ends a target-value game exactly when the portfolio reaches its goal", () => {
+  assert.equal(targetValueReached(99_999_999, 100_000_000), false);
+  assert.equal(targetValueReached(100_000_000, 100_000_000), true);
+  assert.equal(targetValueReached(100_000_001, 100_000_000), true);
+  assert.equal(targetValueReached(100_000_000, null), false);
+});
+
+test("builds completed day, week, and month bonus windows in New York time", () => {
+  const now = Date.parse("2026-07-28T12:00:00Z");
+  assert.deepEqual(completedCompetitionPeriod("day", now), {
+    periodType: "day",
+    key: "2026-07-27",
+    startAt: Date.parse("2026-07-27T04:00:00Z"),
+    endAt: Date.parse("2026-07-28T04:00:00Z"),
+  });
+  assert.deepEqual(completedCompetitionPeriod("week", now), {
+    periodType: "week",
+    key: "2026-07-20",
+    startAt: Date.parse("2026-07-20T04:00:00Z"),
+    endAt: Date.parse("2026-07-27T04:00:00Z"),
+  });
+  assert.deepEqual(completedCompetitionPeriod("month", now), {
+    periodType: "month",
+    key: "2026-06",
+    startAt: Date.parse("2026-06-01T04:00:00Z"),
+    endAt: Date.parse("2026-07-01T04:00:00Z"),
+  });
+});
+
+test("selects a unique period bonus winner and pays no tied period", () => {
+  const candidates = [
+    {
+      seatId: "one",
+      startValue: 1_000_000,
+      endValue: 1_020_000,
+      startAt: 1,
+      endAt: 2,
+    },
+    {
+      seatId: "two",
+      startValue: 1_000_000,
+      endValue: 1_010_000,
+      startAt: 1,
+      endAt: 2,
+    },
+  ];
+  assert.deepEqual(selectPeriodBonusWinner(candidates), {
+    winner: { seatId: "one", endValue: 1_020_000, changeBps: 200 },
+    winningChangeBps: 200,
+  });
+  assert.equal(
+    selectPeriodBonusWinner([
+      candidates[0],
+      { ...candidates[0], seatId: "two" },
+    ]).winner,
+    null,
+  );
 });

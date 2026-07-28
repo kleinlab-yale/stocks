@@ -22,6 +22,20 @@
       "when": 1785239230590,
       "tag": "0002_military_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785251026009,
+      "tag": "0003_worried_winter_soldier",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1785251600457,
+      "tag": "0004_nasty_stellaris",
+      "breakpoints": true
     }
   ]
 }

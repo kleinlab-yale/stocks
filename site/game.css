@@ -214,12 +214,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .game-form { display: grid; gap: 14px; }
 .game-field { display: grid; gap: 7px; }
+.goal-value-field[hidden] { display: none; }
 .game-field > span {
   color: #69746f;
   font-size: 8px;
   font-weight: 850;
   letter-spacing: .11em;
   text-transform: uppercase;
+}
+.game-field > small {
+  color: #74807a;
+  font-size: 8px;
 }
 .game-field input, .game-field select, .trade-form input, .trade-form select, .invite-link {
   width: 100%;
@@ -366,7 +371,7 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .trend-heading { margin-bottom: 11px; }
 .period-leaders {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 7px;
   margin-bottom: 9px;
 }
@@ -388,6 +393,100 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .period-leader strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .period-leader small { font-size: 9px; font-weight: 850; }
+.period-ranking {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #f5f4ef;
+}
+.period-ranking-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 7px;
+}
+.period-ranking-title strong { font-size: 10px; }
+.period-ranking-title span { color: #7a8580; font-size: 7px; }
+.period-ranking-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+.period-ranking-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 0;
+  border-top: 1px solid rgba(9, 26, 20, .08);
+}
+.period-ranking-row > span {
+  color: #839089;
+  font-size: 8px;
+  font-weight: 850;
+}
+.period-ranking-row strong {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.period-ranking-row small {
+  font-size: 8px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.bonus-panel { margin-top: 14px; }
+.bonus-total-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+.bonus-total-row {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px 11px;
+  border-radius: 11px;
+  background: #eeeee8;
+}
+.bonus-total-row strong {
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bonus-total-row span {
+  color: #287b28;
+  font-size: 12px;
+  font-weight: 850;
+}
+.bonus-history {
+  margin-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.bonus-history summary {
+  padding: 11px 2px 3px;
+  color: #69746f;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.bonus-history-list { display: grid; margin-top: 5px; }
+.bonus-award-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 2px;
+  border-top: 1px solid rgba(9, 26, 20, .08);
+  font-size: 8px;
+}
+.bonus-award-row > span:nth-child(2) { color: #7a8580; }
+.bonus-award-row > strong { color: #287b28; }
 .trend-range-tabs {
   width: fit-content;
   display: grid;
@@ -753,8 +852,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .panel { padding: 14px; border-radius: 17px; }
   .panel-heading h2, .section-heading h2 { font-size: 21px; }
   .trend-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
+  .period-leaders { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .period-leader { padding: 8px; }
   .trend-range-tabs { width: 100%; }
   .trend-canvas { height: 185px; }
+  .bonus-total-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .holding-card { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .holding-symbol { grid-column: 1 / 3; }
   .holding-card button { grid-column: 3; grid-row: 1; }
@@ -771,6 +873,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
   .game-board-main { grid-column: 1 / -1; }
   .game-board-metric.rank { grid-column: 1 / -1; }
   .gateway-rules, .rules-grid { grid-template-columns: 1fr; }
+  .period-leaders, .period-ranking-list { grid-template-columns: 1fr; }
+  .bonus-award-row { grid-template-columns: 1fr auto; }
+  .bonus-award-row > span:nth-child(2) { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

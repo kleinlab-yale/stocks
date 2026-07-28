@@ -4,7 +4,7 @@ TickerQuest combines a free portfolio/watchlist scorecard with a private eight-p
 
 ## Family Portfolio League
 
-Open `game.html` from the dashboard and create a one-week or one-month league. The host receives eight unique private invitation links. A family member follows one link, enters a display name, and immediately receives $10,000 of simulated cash.
+Open `game.html` from the dashboard and choose an equal starting bankroll for all eight seats. A game can run for a week, month, year, indefinitely, or until the first portfolio reaches a host-selected monetary target. The host receives eight unique private invitation links.
 
 The host can:
 
@@ -15,6 +15,8 @@ The host can:
 - end the game early and lock the final standings.
 
 Players can enter any valid U.S.-listed stock or ETF ticker, check its newest available price, and buy or sell fractional shares whenever the game is active, including nights and weekends. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Orders use the newest shared quote available—regular-market, pre-market, after-hours, or the most recent closing snapshot—and show that quote’s source and timestamp before execution. A quote more than seven days old cannot execute a trade. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
+
+Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
 ### Game taxation
 

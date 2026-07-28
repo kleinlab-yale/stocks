@@ -4,11 +4,14 @@ import {
   afterTaxValueCents,
   allocateFifoSale,
   applyPendingWashLosses,
+  completedCompetitionPeriod,
   gameEndsAt,
   grossCents,
   microsToShares,
   quoteTimestampIsExecutable,
+  selectPeriodBonusWinner,
   sharesToMicros,
+  targetValueReached,
   taxReserveCents,
   tradingIsActive,
 } from "@/lib/game-rules.js";
@@ -25,6 +28,9 @@ const ALLOWED_ORIGINS = new Set([
   "http://127.0.0.1:8000",
 ]);
 const STARTING_CASH_CENTS = 1_000_000;
+const MIN_STARTING_CASH_CENTS = 10_000;
+const MAX_STARTING_CASH_CENTS = 10_000_000_000;
+const MAX_TARGET_VALUE_CENTS = 100_000_000_000;
 const TAX_RATE_BPS = 2_400;
 const MAX_SEATS = 8;
 const WASH_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
@@ -35,6 +41,11 @@ const MARKET_FETCH_TIMEOUT_MS = 6 * 1_000;
 const QUOTE_FETCH_TIMEOUT_MS = 6 * 1_000;
 const PORTFOLIO_SNAPSHOT_INTERVAL_MS = 30 * 60 * 1_000;
 const MAX_TREND_POINTS = 120;
+const PERIOD_BONUSES_CENTS = {
+  day: 10_000,
+  week: 100_000,
+  month: 1_000_000,
+} as const;
 
 type GameRow = {
   id: string;
@@ -44,6 +55,8 @@ type GameRow = {
   starting_cash_cents: number;
   tax_rate_bps: number;
   duration_days: number;
+  target_value_cents: number | null;
+  winner_seat_id: string | null;
   created_at: number;
   started_at: number | null;
   ends_at: number | null;
@@ -58,6 +71,7 @@ type SeatRow = {
   player_name: string | null;
   joined_at: number | null;
   cash_cents: number;
+  bonus_cents: number;
   realized_net_cents: number;
   tax_reserve_cents: number;
 };
@@ -119,6 +133,16 @@ type PortfolioSnapshotRow = {
   seat_id: string;
   after_tax_cents: number;
   captured_at: number;
+};
+
+type PeriodValueRow = {
+  seat_id: string;
+  anchor_value: number | null;
+  anchor_at: number | null;
+  first_value: number | null;
+  first_at: number | null;
+  end_value: number | null;
+  end_at: number | null;
 };
 
 type NasdaqInfoResponse = {
@@ -518,6 +542,149 @@ function refreshQuotesInBackground(
   context.waitUntil(refresh);
 }
 
+async function settlePeriodBonuses(
+  db: D1Database,
+  game: GameRow,
+) {
+  if (!game.started_at || game.status === "lobby") return;
+  const competitionEnd = game.ended_at ?? game.ends_at;
+
+  for (const periodType of ["day", "week", "month"] as const) {
+    const period = completedCompetitionPeriod(periodType);
+    if (
+      !period ||
+      game.started_at >= period.endAt ||
+      (competitionEnd && competitionEnd < period.endAt)
+    ) {
+      continue;
+    }
+    const settled = await db
+      .prepare(
+        `SELECT id FROM period_awards
+         WHERE game_id = ? AND period_type = ? AND period_key = ?`,
+      )
+      .bind(game.id, periodType, period.key)
+      .first<{ id: string }>();
+    if (settled) continue;
+
+    const periodStart = Math.max(period.startAt, game.started_at);
+    const values = await db
+      .prepare(
+        `SELECT
+           seats.id AS seat_id,
+           (
+             SELECT snapshots.after_tax_cents
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at <= ?
+             ORDER BY snapshots.captured_at DESC
+             LIMIT 1
+           ) AS anchor_value,
+           (
+             SELECT snapshots.captured_at
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at <= ?
+             ORDER BY snapshots.captured_at DESC
+             LIMIT 1
+           ) AS anchor_at,
+           (
+             SELECT snapshots.after_tax_cents
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at > ?
+               AND snapshots.captured_at < ?
+             ORDER BY snapshots.captured_at ASC
+             LIMIT 1
+           ) AS first_value,
+           (
+             SELECT snapshots.captured_at
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at > ?
+               AND snapshots.captured_at < ?
+             ORDER BY snapshots.captured_at ASC
+             LIMIT 1
+           ) AS first_at,
+           (
+             SELECT snapshots.after_tax_cents
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at >= ?
+               AND snapshots.captured_at < ?
+             ORDER BY snapshots.captured_at DESC
+             LIMIT 1
+           ) AS end_value,
+           (
+             SELECT snapshots.captured_at
+             FROM portfolio_snapshots AS snapshots
+             WHERE snapshots.seat_id = seats.id
+               AND snapshots.captured_at >= ?
+               AND snapshots.captured_at < ?
+             ORDER BY snapshots.captured_at DESC
+             LIMIT 1
+           ) AS end_at
+         FROM seats
+         WHERE seats.game_id = ? AND seats.player_name IS NOT NULL`,
+      )
+      .bind(
+        periodStart,
+        periodStart,
+        periodStart,
+        period.endAt,
+        periodStart,
+        period.endAt,
+        periodStart,
+        period.endAt,
+        periodStart,
+        period.endAt,
+        game.id,
+      )
+      .all<PeriodValueRow>();
+
+    const { winner, winningChangeBps } = selectPeriodBonusWinner(
+      values.results.map((row) => ({
+        seatId: row.seat_id,
+        startValue: row.anchor_value ?? row.first_value,
+        startAt: row.anchor_at ?? row.first_at,
+        endValue: row.end_value,
+        endAt: row.end_at,
+      })),
+    );
+    const bonusCents = winner ? PERIOD_BONUSES_CENTS[periodType] : 0;
+    const inserted = await db
+      .prepare(
+        `INSERT INTO period_awards (
+          id, game_id, seat_id, period_type, period_key, bonus_cents,
+          winning_change_bps, awarded_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(game_id, period_type, period_key) DO NOTHING`,
+      )
+      .bind(
+        crypto.randomUUID(),
+        game.id,
+        winner?.seatId ?? null,
+        periodType,
+        period.key,
+        bonusCents,
+        winningChangeBps,
+        Date.now(),
+      )
+      .run();
+    if (inserted.meta.changes && winner) {
+      await db
+        .prepare(
+          `UPDATE seats
+           SET cash_cents = cash_cents + ?,
+               bonus_cents = bonus_cents + ?
+           WHERE id = ?`,
+        )
+        .bind(bonusCents, bonusCents, winner.seatId)
+        .run();
+    }
+  }
+}
+
 async function recordAndLoadPortfolioTrends(
   db: D1Database,
   game: GameRow,
@@ -531,7 +698,8 @@ async function recordAndLoadPortfolioTrends(
   if (!game.started_at || !leaderboard.length) {
     return {
       playerTrends: [],
-      periodLeaders: { day: null, week: null },
+      periodLeaders: { day: null, week: null, month: null },
+      periodRankings: { day: [], week: [], month: [], max: [] },
     };
   }
   const observedAt =
@@ -754,17 +922,36 @@ async function recordAndLoadPortfolioTrends(
       ranges,
     };
   });
-  const leaderFor = (rangeName: "day" | "week") => {
-    const leader = [...playerTrends].sort(
-      (left, right) =>
-        Number(right.ranges[rangeName].changePercent) -
-        Number(left.ranges[rangeName].changePercent),
-    )[0];
+  const rankingFor = (
+    rangeName: "day" | "week" | "month" | "max",
+  ) =>
+    [...playerTrends]
+      .sort(
+        (left, right) =>
+          Number(right.ranges[rangeName].changePercent) -
+          Number(left.ranges[rangeName].changePercent),
+      )
+      .map((player, index) => ({
+        rank: index + 1,
+        seatId: player.seatId,
+        playerName: player.playerName,
+        changeCents: player.ranges[rangeName].changeCents,
+        changePercent: player.ranges[rangeName].changePercent,
+      }));
+  const periodRankings = {
+    day: rankingFor("day"),
+    week: rankingFor("week"),
+    month: rankingFor("month"),
+    max: rankingFor("max"),
+  };
+  const leaderFor = (rangeName: "day" | "week" | "month") => {
+    const leader = periodRankings[rangeName][0];
     return leader
       ? {
           seatId: leader.seatId,
           playerName: leader.playerName,
-          changePercent: leader.ranges[rangeName].changePercent,
+          changeCents: leader.changeCents,
+          changePercent: leader.changePercent,
         }
       : null;
   };
@@ -773,7 +960,9 @@ async function recordAndLoadPortfolioTrends(
     periodLeaders: {
       day: leaderFor("day"),
       week: leaderFor("week"),
+      month: leaderFor("month"),
     },
+    periodRankings,
   };
 }
 
@@ -781,10 +970,45 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = crypto.randomUUID();
   const hostToken = randomToken();
+  const requestedStartingCash =
+    payload.startingCash === undefined
+      ? STARTING_CASH_CENTS
+      : moneyStringToCents(payload.startingCash);
+  if (
+    requestedStartingCash === null ||
+    requestedStartingCash < MIN_STARTING_CASH_CENTS ||
+    requestedStartingCash > MAX_STARTING_CASH_CENTS
+  ) {
+    throw new HttpError(
+      400,
+      "Starting cash must be between $100 and $100,000,000.",
+    );
+  }
+  const startingCashCents = requestedStartingCash;
+  const endCondition = String(payload.endCondition ?? "duration");
   const requestedDuration = Number(payload.durationDays);
-  const durationDays = [0, 7, 30, 365].includes(requestedDuration)
-    ? requestedDuration
-    : 30;
+  const durationDays =
+    endCondition === "goal"
+      ? 0
+      : [0, 7, 30, 365].includes(requestedDuration)
+        ? requestedDuration
+        : 30;
+  const requestedTargetValue =
+    endCondition === "goal"
+      ? moneyStringToCents(payload.targetValue)
+      : null;
+  if (
+    endCondition === "goal" &&
+    (requestedTargetValue === null ||
+      requestedTargetValue <= startingCashCents ||
+      requestedTargetValue > MAX_TARGET_VALUE_CENTS)
+  ) {
+    throw new HttpError(
+      400,
+      "The winning target must be above the starting cash and no more than $1,000,000,000.",
+    );
+  }
+  const targetValueCents = requestedTargetValue;
   const name = cleanName(payload.name, "Family Portfolio League");
   const createdAt = Date.now();
   const invitations: Array<{ seatNumber: number; token: string }> = [];
@@ -793,16 +1017,17 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
       .prepare(
         `INSERT INTO games (
           id, name, host_token_hash, status, starting_cash_cents,
-          tax_rate_bps, duration_days, created_at
-        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?)`,
+          tax_rate_bps, duration_days, target_value_cents, created_at
+        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?, ?)`,
       )
       .bind(
         gameId,
         name,
         await tokenHash(hostToken),
-        STARTING_CASH_CENTS,
+        startingCashCents,
         TAX_RATE_BPS,
         durationDays,
+        targetValueCents,
         createdAt,
       ),
   ];
@@ -823,7 +1048,7 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
           gameId,
           seatNumber,
           await tokenHash(token),
-          STARTING_CASH_CENTS,
+          startingCashCents,
         ),
     );
   }
@@ -837,7 +1062,8 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
       invitations,
       name,
       durationDays,
-      startingCashCents: STARTING_CASH_CENTS,
+      startingCashCents,
+      targetValueCents,
       taxRateBps: TAX_RATE_BPS,
     },
     201,
@@ -854,8 +1080,16 @@ async function health(request: Request) {
     service: "tickerquest-family-game",
     capabilities: {
       durationDays: [7, 30, 365, 0],
+      configurableStartingCash: true,
+      targetValueEnd: true,
       trendRanges: ["day", "week", "month", "max"],
-      periodLeaders: ["day", "week"],
+      periodLeaders: ["day", "week", "month"],
+      periodRankings: ["day", "week", "month", "max"],
+      periodBonuses: {
+        dayCents: PERIOD_BONUSES_CENTS.day,
+        weekCents: PERIOD_BONUSES_CENTS.week,
+        monthCents: PERIOD_BONUSES_CENTS.month,
+      },
     },
   });
 }
@@ -949,7 +1183,8 @@ async function resetSeat(request: Request, payload: Record<string, unknown>) {
     .prepare(
       `UPDATE seats
        SET invite_token_hash = ?, player_name = NULL, joined_at = NULL,
-           cash_cents = ?, realized_net_cents = 0, tax_reserve_cents = 0
+           cash_cents = ?, bonus_cents = 0, realized_net_cents = 0,
+           tax_reserve_cents = 0
        WHERE game_id = ? AND seat_number = ?`,
     )
     .bind(
@@ -1289,7 +1524,10 @@ async function gameState(request: Request) {
     game = { ...game, status: "ended", ended_at: game.ends_at };
   }
 
-  const [seatResult, lotResult, tradeResult, market] = await Promise.all([
+  await settlePeriodBonuses(db, game);
+
+  const [seatResult, lotResult, tradeResult, awardResult, market] =
+    await Promise.all([
     db
       .prepare("SELECT * FROM seats WHERE game_id = ? ORDER BY seat_number")
       .bind(gameId)
@@ -1310,6 +1548,24 @@ async function gameState(request: Request) {
          WHERE t.game_id = ?
          ORDER BY t.created_at DESC
          LIMIT 24`,
+      )
+      .bind(gameId)
+      .all<Record<string, string | number | null>>(),
+    db
+      .prepare(
+        `SELECT
+           awards.id,
+           awards.seat_id,
+           seats.player_name,
+           awards.period_type,
+           awards.period_key,
+           awards.bonus_cents,
+           awards.winning_change_bps,
+           awards.awarded_at
+         FROM period_awards AS awards
+         JOIN seats ON seats.id = awards.seat_id
+         WHERE awards.game_id = ? AND awards.bonus_cents > 0
+         ORDER BY awards.awarded_at DESC`,
       )
       .bind(gameId)
       .all<Record<string, string | number | null>>(),
@@ -1388,6 +1644,7 @@ async function gameState(request: Request) {
         seatNumber: seat.seat_number,
         playerName: seat.player_name,
         cashCents: seat.cash_cents,
+        bonusCents: seat.bonus_cents,
         spendableCashCents: Math.max(
           0,
           seat.cash_cents - seat.tax_reserve_cents,
@@ -1405,7 +1662,55 @@ async function gameState(request: Request) {
     })
     .sort((a, b) => b.afterTaxCents - a.afterTaxCents)
     .map((player, index) => ({ ...player, rank: index + 1 }));
-  const { playerTrends, periodLeaders } =
+
+  const overallLeader = leaderboard[0];
+  if (
+    overallLeader &&
+    game.status === "active" &&
+    targetValueReached(
+      overallLeader.afterTaxCents,
+      game.target_value_cents,
+    )
+  ) {
+    const endedAt = Date.now();
+    const result = await db
+      .prepare(
+        `UPDATE games
+         SET status = 'ended', ended_at = ?, winner_seat_id = ?
+         WHERE id = ? AND status = 'active' AND winner_seat_id IS NULL`,
+      )
+      .bind(endedAt, overallLeader.seatId, game.id)
+      .run();
+    game = result.meta.changes
+      ? {
+          ...game,
+          status: "ended",
+          ended_at: endedAt,
+          winner_seat_id: overallLeader.seatId,
+        }
+      : await gameById(db, game.id);
+  }
+  if (
+    overallLeader &&
+    game.status === "ended" &&
+    !game.winner_seat_id
+  ) {
+    const result = await db
+      .prepare(
+        `UPDATE games
+         SET winner_seat_id = ?
+         WHERE id = ? AND status = 'ended' AND winner_seat_id IS NULL`,
+      )
+      .bind(overallLeader.seatId, game.id)
+      .run();
+    if (result.meta.changes) {
+      game = { ...game, winner_seat_id: overallLeader.seatId };
+    } else {
+      game = await gameById(db, game.id);
+    }
+  }
+
+  const { playerTrends, periodLeaders, periodRankings } =
     await recordAndLoadPortfolioTrends(
       db,
       game,
@@ -1421,6 +1726,8 @@ async function gameState(request: Request) {
       status: game.status,
       durationDays: game.duration_days,
       startingCashCents: game.starting_cash_cents,
+      targetValueCents: game.target_value_cents,
+      winnerSeatId: game.winner_seat_id,
       taxRateBps: game.tax_rate_bps,
       createdAt: game.created_at,
       startedAt: game.started_at,
@@ -1443,6 +1750,18 @@ async function gameState(request: Request) {
     leaderboard,
     playerTrends,
     periodLeaders,
+    periodRankings,
+    bonusAwards: awardResult.results.map((row) => ({
+      id: row.id,
+      seatId: row.seat_id,
+      playerName: row.player_name,
+      periodType: row.period_type,
+      periodKey: row.period_key,
+      bonusCents: Number(row.bonus_cents),
+      winningChangePercent:
+        Number(row.winning_change_bps) / 100,
+      awardedAt: Number(row.awarded_at),
+    })),
     recentTrades: tradeResult.results.map((row) => ({
       id: row.id,
       playerName: row.player_name,
@@ -1458,7 +1777,11 @@ async function gameState(request: Request) {
       mode: market.mode,
       sessionLabel,
       executionPolicy: "latest-available",
-      canTrade: game.status === "active",
+      canTrade: tradingIsActive(
+        game.status,
+        game.ends_at,
+        Date.now(),
+      ),
       symbols: allQuotes.map((quote) => ({
         symbol: quote.symbol,
         name: quote.name,

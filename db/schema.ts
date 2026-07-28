@@ -14,6 +14,8 @@ export const games = sqliteTable("games", {
   startingCashCents: integer("starting_cash_cents").notNull(),
   taxRateBps: integer("tax_rate_bps").notNull(),
   durationDays: integer("duration_days").notNull(),
+  targetValueCents: integer("target_value_cents"),
+  winnerSeatId: text("winner_seat_id"),
   createdAt: integer("created_at").notNull(),
   startedAt: integer("started_at"),
   endsAt: integer("ends_at"),
@@ -32,6 +34,7 @@ export const seats = sqliteTable(
     playerName: text("player_name"),
     joinedAt: integer("joined_at"),
     cashCents: integer("cash_cents").notNull(),
+    bonusCents: integer("bonus_cents").notNull().default(0),
     realizedNetCents: integer("realized_net_cents").notNull().default(0),
     taxReserveCents: integer("tax_reserve_cents").notNull().default(0),
   },
@@ -159,6 +162,35 @@ export const portfolioSnapshots = sqliteTable(
     index("portfolio_snapshots_game_time_idx").on(
       table.gameId,
       table.capturedAt,
+    ),
+  ],
+);
+
+export const periodAwards = sqliteTable(
+  "period_awards",
+  {
+    id: text("id").primaryKey(),
+    gameId: text("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    seatId: text("seat_id").references(() => seats.id, {
+      onDelete: "cascade",
+    }),
+    periodType: text("period_type").notNull(),
+    periodKey: text("period_key").notNull(),
+    bonusCents: integer("bonus_cents").notNull(),
+    winningChangeBps: integer("winning_change_bps").notNull(),
+    awardedAt: integer("awarded_at").notNull(),
+  },
+  (table) => [
+    uniqueIndex("period_awards_game_period_unique").on(
+      table.gameId,
+      table.periodType,
+      table.periodKey,
+    ),
+    index("period_awards_game_time_idx").on(
+      table.gameId,
+      table.awardedAt,
     ),
   ],
 );

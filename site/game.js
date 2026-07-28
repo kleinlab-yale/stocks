@@ -90,6 +90,9 @@
   }
 
   function gameLength(game) {
+    if (game.targetValueCents) {
+      return `First to ${money(game.targetValueCents)}`;
+    }
     if (Number(game.durationDays) === 0) return "No-end game";
     if (Number(game.durationDays) === 365) return "One-year game";
     if (Number(game.durationDays) === 30) return "One-month game";
@@ -99,6 +102,9 @@
   function countdown(game) {
     if (game.status === "lobby") return gameLength(game);
     if (game.status === "ended") return "Final standings";
+    if (game.targetValueCents) {
+      return `Race to ${money(game.targetValueCents)}`;
+    }
     if (!game.endsAt) return "No time limit";
     const remaining = Math.max(0, Number(game.endsAt) - Date.now());
     const days = Math.floor(remaining / 86_400_000);
@@ -200,6 +206,10 @@
     const extendedDurations =
       serviceCapabilities?.durationDays?.includes(365) &&
       serviceCapabilities?.durationDays?.includes(0);
+    const configurableStartingCash =
+      serviceCapabilities?.configurableStartingCash === true;
+    const targetValueEnd =
+      serviceCapabilities?.targetValueEnd === true;
     setSession("Family league", true);
     roleSwitch.hidden = true;
     root.innerHTML = `
@@ -208,10 +218,10 @@
           <div>
             <p class="eyebrow">Private family portfolio league</p>
             <h1>Eight seats.<br>One champion.</h1>
-            <p>Start everyone with the same $10,000, trade real market prices, and compete for a week, month, year, or with no finish line.</p>
+            <p>Give everyone the same starting bankroll, trade real market prices, and race for a week, month, year, forever, or to a winning portfolio value.</p>
           </div>
           <div class="gateway-rules">
-            <span><strong>$10,000</strong><small>Simulated starting cash</small></span>
+            <span><strong>${configurableStartingCash ? "Your amount" : "$10,000"}</strong><small>Equal simulated starting cash</small></span>
             <span><strong>8 seats</strong><small>One private link per player</small></span>
             <span><strong>24% tax</strong><small>Reserved on net realized gains</small></span>
             <span><strong>After tax</strong><small>Determines the leaderboard</small></span>
@@ -227,13 +237,31 @@
               <input name="name" maxlength="40" value="Family Portfolio League" required>
             </label>
             <label class="game-field">
-              <span>Game length</span>
-              <select name="durationDays">
+              <span>How the game ends</span>
+              <select name="endCondition">
                 <option value="7">One week</option>
                 <option value="30" selected>One month</option>
                 ${extendedDurations ? '<option value="365">One year</option><option value="0">No end date</option>' : ""}
+                ${targetValueEnd ? '<option value="goal">First to a portfolio value</option>' : ""}
               </select>
             </label>
+            ${
+              configurableStartingCash
+                ? `<label class="game-field">
+                    <span>Starting cash per player</span>
+                    <input name="startingCash" type="number" min="100" max="100000000" step="100" value="10000" inputmode="decimal" required>
+                  </label>`
+                : '<input name="startingCash" type="hidden" value="10000">'
+            }
+            ${
+              targetValueEnd
+                ? `<label class="game-field goal-value-field" hidden>
+                    <span>Winning portfolio value</span>
+                    <input name="targetValue" type="number" min="101" max="1000000000" step="1000" value="1000000" inputmode="decimal">
+                    <small>Must be higher than the starting cash.</small>
+                  </label>`
+                : ""
+            }
             <button class="primary-action mint" type="submit">Create eight-seat game</button>
             <p class="form-status"></p>
           </form>
@@ -241,6 +269,27 @@
         </div>
       </section>
     `;
+    updateCreateGoalFields();
+  }
+
+  function updateCreateGoalFields() {
+    const form = document.querySelector("#create-game-form");
+    if (!form) return;
+    const goalField = form.querySelector(".goal-value-field");
+    const targetInput = form.elements.targetValue;
+    if (!goalField || !targetInput) return;
+    const isGoal = form.elements.endCondition.value === "goal";
+    goalField.hidden = !isGoal;
+    targetInput.required = isGoal;
+    const startingCash = Number(form.elements.startingCash?.value || 0);
+    if (Number.isFinite(startingCash) && startingCash > 0) {
+      targetInput.min = String(startingCash + 1);
+      if (isGoal && Number(targetInput.value) <= startingCash) {
+        targetInput.value = String(
+          Math.min(1_000_000_000, startingCash * 10),
+        );
+      }
+    }
   }
 
   function renderConfigurationError() {
@@ -273,7 +322,7 @@
               <span>Player name</span>
               <input name="playerName" maxlength="20" autocomplete="nickname" placeholder="Your name" required autofocus>
             </label>
-            <button class="primary-action mint" type="submit">Join with $10,000</button>
+            <button class="primary-action mint" type="submit">Join with ${money(data.game.startingCashCents)}</button>
             <p class="form-status"></p>
           </form>
         </div>
@@ -291,7 +340,7 @@
           <div class="seat-badge">#${escapeHtml(data.you.seatNumber)}</div>
           <p class="eyebrow">${escapeHtml(data.game.name)}</p>
           <h1>You’re in, ${escapeHtml(data.you.playerName)}.</h1>
-          <p>The host will start this ${gameLength(data.game).toLowerCase()} after at least one more family member joins.</p>
+          <p>The host will start the game after at least one more family member joins. Format: ${gameLength(data.game).toLowerCase()}.</p>
           <div class="lobby-progress"><span style="width:${width}%"></span></div>
           <p class="fine-print">${joined} of 8 seats claimed · This page refreshes automatically</p>
           <button class="secondary-action" type="button" data-action="refresh" style="width:100%;margin-top:16px">Check the lobby</button>
@@ -350,7 +399,7 @@
         <div class="game-title">
           <span class="state-pill">Lobby</span>
           <h1>${escapeHtml(data.game.name)}</h1>
-          <p>${gameLength(data.game)} · $10,000 per player · 24% simulated short-term tax</p>
+          <p>${gameLength(data.game)} · ${money(data.game.startingCashCents)} per player · 24% simulated short-term tax</p>
         </div>
         <div class="game-actions">
           <button class="secondary-action" type="button" data-action="refresh">Refresh lobby</button>
@@ -364,11 +413,11 @@
         <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
       </section>
       <section class="seat-grid">${cards}</section>
-      ${renderRules()}
+      ${renderRules(Array.isArray(data.bonusAwards))}
     `;
   }
 
-  function renderRules() {
+  function renderRules(bonusEnabled = false) {
     return `
       <section class="panel rules-panel">
         <div class="panel-heading">
@@ -379,6 +428,11 @@
           <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of net realized gains. Reserved cash cannot fund a new purchase.</span></details>
           <details class="rule-item"><summary><strong>FIFO basis</strong></summary><span>When shares are sold, the oldest purchase lots are treated as sold first.</span></details>
           <details class="rule-item"><summary><strong>Wash sales</strong></summary><span>A loss followed by a repurchase of the same ticker within 30 days is deferred into the new lot’s cost basis.</span></details>
+          ${
+            bonusEnabled
+              ? "<details class=\"rule-item\"><summary><strong>Period bonuses</strong></summary><span>Completed New York-time periods award $100 daily, $1,000 weekly, and $10,000 monthly. Bonuses become spendable game cash and remain in the lifetime Bonus bank. Tied periods pay no bonus.</span></details>"
+              : ""
+          }
         </div>
       </section>
     `;
@@ -476,13 +530,14 @@
       return `<div class="empty-compact">The leaderboard appears when players join.</div>`;
     }
     const youSeat = currentRole === "player" ? data.you?.seatId : "";
+    const winnerSeat = data.game.winnerSeatId || "";
     return `<div class="leaderboard-list">${data.leaderboard
       .map(
         (player) => `
           <details class="leaderboard-row${player.seatId === youSeat ? " you" : ""}">
             <summary>
               <span class="rank-number">${player.rank}</span>
-              <span class="leader-name"><strong>${escapeHtml(player.playerName)}${player.seatId === youSeat ? " · You" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}</span></span>
+              <span class="leader-name"><strong>${escapeHtml(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}</span></span>
               <span class="leader-metric"><span>After tax</span><strong>${money(player.afterTaxCents)}</strong></span>
               <span class="leader-metric cash"><span>Cash</span><strong>${money(player.spendableCashCents)}</strong></span>
               <span class="leader-metric tax"><span>Return</span><strong class="${gainClass(player.returnPercent)}">${percent(player.returnPercent)}</strong></span>
@@ -558,14 +613,42 @@
         `,
       )
       .join("");
-    const periodLeader = (label, leader) =>
+    const supportsBonuses = Array.isArray(data.bonusAwards);
+    const periodLeader = (label, leader, bonus) =>
       leader
         ? `<div class="period-leader">
-            <span>${label} · live</span>
+            <span>${label} · ${supportsBonuses ? `${bonus} bonus` : "live"}</span>
             <strong>${escapeHtml(leader.playerName)}</strong>
             <small class="${gainClass(leader.changePercent)}">${percent(leader.changePercent)}</small>
           </div>`
         : "";
+    const selectedRankings = data.periodRankings?.[trendRange] ?? [];
+    const rangeLabel = {
+      day: "Daily",
+      week: "Weekly",
+      month: "Monthly",
+      max: "Overall period",
+    }[trendRange];
+    const rankings = selectedRankings.length
+      ? `<div class="period-ranking">
+          <div class="period-ranking-title">
+            <strong>${rangeLabel} rankings</strong>
+            <span>Ranked by percentage growth</span>
+          </div>
+          <div class="period-ranking-list">
+            ${selectedRankings
+              .map(
+                (player) => `
+                  <div class="period-ranking-row">
+                    <span>${player.rank}</span>
+                    <strong>${escapeHtml(player.playerName)}</strong>
+                    <small class="${gainClass(player.changePercent)}">${percent(player.changePercent)} · ${signedMoney(player.changeCents)}</small>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+        </div>`
+      : "";
     return `
       <section class="panel trend-panel">
         <div class="panel-heading trend-heading">
@@ -576,10 +659,13 @@
           <p>After-tax value · updated every 30 minutes</p>
         </div>
         ${
-          data.periodLeaders?.day || data.periodLeaders?.week
+          data.periodLeaders?.day ||
+          data.periodLeaders?.week ||
+          data.periodLeaders?.month
             ? `<div class="period-leaders">
-                ${periodLeader("Daily leader", data.periodLeaders?.day)}
-                ${periodLeader("Weekly leader", data.periodLeaders?.week)}
+                ${periodLeader("Daily leader", data.periodLeaders?.day, "$100")}
+                ${periodLeader("Weekly leader", data.periodLeaders?.week, "$1K")}
+                ${periodLeader("Monthly leader", data.periodLeaders?.month, "$10K")}
               </div>`
             : ""
         }
@@ -609,7 +695,52 @@
             aria-label="After-tax portfolio value trend lines for the family game"
           ></canvas>
         </div>
+        ${rankings}
         <p class="trend-note"><span class="trend-key up"></span> Green gained over the selected period. <span class="trend-key down"></span> Red declined. Tap a player to isolate their line.</p>
+      </section>
+    `;
+  }
+
+  function renderBonusBank(data) {
+    if (!Array.isArray(data.bonusAwards)) return "";
+    const players = [...data.leaderboard].sort(
+      (left, right) =>
+        Number(right.bonusCents || 0) - Number(left.bonusCents || 0),
+    );
+    const totals = players
+      .map(
+        (player) => `
+          <div class="bonus-total-row">
+            <strong>${escapeHtml(player.playerName)}</strong>
+            <span>${money(player.bonusCents || 0)}</span>
+          </div>`,
+      )
+      .join("");
+    const history = data.bonusAwards.length
+      ? `<details class="bonus-history">
+          <summary>All award history (${data.bonusAwards.length})</summary>
+          <div class="bonus-history-list">
+            ${data.bonusAwards
+              .map(
+                (award) => `
+                  <div class="bonus-award-row">
+                    <span><strong>${escapeHtml(award.playerName)}</strong> won the ${escapeHtml(award.periodType)}</span>
+                    <span>${escapeHtml(award.periodKey)}</span>
+                    <strong>${money(award.bonusCents)}</strong>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+        </details>`
+      : '<div class="empty-compact">No completed period bonuses yet.</div>';
+    return `
+      <section class="panel bonus-panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Lifetime rewards</p><h2>Bonus bank</h2></div>
+          <p>Bonuses stay recorded after they are spent</p>
+        </div>
+        <div class="bonus-total-list">${totals}</div>
+        ${history}
       </section>
     `;
   }
@@ -797,7 +928,15 @@
         <div class="game-board-cell game-board-metric rank">
           <span>${you ? "Your rank" : "Time left"}</span>
           <strong>${you ? `#${you.rank} / ${joined}` : countdown(data.game)}</strong>
-          <small>${data.game.status === "ended" ? "Game complete" : data.game.endsAt ? `Ends ${dateTime(data.game.endsAt)}` : "No scheduled end"}</small>
+          <small>${
+            data.game.status === "ended"
+              ? "Game complete"
+              : data.game.targetValueCents
+                ? `Ends at ${money(data.game.targetValueCents)}`
+                : data.game.endsAt
+                  ? `Ends ${dateTime(data.game.endsAt)}`
+                  : "No scheduled end"
+          }</small>
         </div>
       </section>
       ${renderPlayerTrends(data)}
@@ -825,12 +964,13 @@
         <div class="panel-heading"><div><p class="eyebrow">After-tax standings</p><h2>Leaderboard</h2></div><p>Tap a player to see holdings</p></div>
         ${renderLeaderboard(data)}
       </section>
+      ${renderBonusBank(data)}
       ${
         you
           ? `<section class="panel leaderboard-panel"><div class="panel-heading"><div><p class="eyebrow">League tape</p><h2>Recent activity</h2></div></div>${renderActivity(data.recentTrades)}</section>`
           : ""
       }
-      ${renderRules()}
+      ${renderRules(Array.isArray(data.bonusAwards))}
     `;
     updateTradePreview();
     drawPlayerTrends(data);
@@ -955,12 +1095,18 @@
       if (form.id === "create-game-form") {
         setFormStatus(form, "Creating eight private seats…");
         const values = new FormData(form);
+        const endCondition = String(values.get("endCondition") ?? "30");
         const result = await apiRequest(
           "POST",
           {
             action: "create",
             name: values.get("name"),
-            durationDays: Number(values.get("durationDays")),
+            startingCash: values.get("startingCash"),
+            endCondition: endCondition === "goal" ? "goal" : "duration",
+            durationDays:
+              endCondition === "goal" ? 0 : Number(endCondition),
+            targetValue:
+              endCondition === "goal" ? values.get("targetValue") : null,
           },
           "host",
         );
@@ -1038,10 +1184,12 @@
       event.target.value = event.target.value.toUpperCase();
     }
     if (event.target.closest("#trade-form")) updateTradePreview();
+    if (event.target.name === "startingCash") updateCreateGoalFields();
   });
 
   root.addEventListener("change", (event) => {
     if (event.target.closest("#trade-form")) updateTradePreview();
+    if (event.target.name === "endCondition") updateCreateGoalFields();
   });
 
   root.addEventListener("click", async (event) => {
