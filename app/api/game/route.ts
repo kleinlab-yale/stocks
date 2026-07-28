@@ -1233,6 +1233,8 @@ async function buyStock(
     newRealizedNet,
     game.tax_rate_bps,
   );
+  const taxDeltaCents =
+    newTaxReserve - seat.tax_reserve_cents;
   const newCash = seat.cash_cents - costCents;
   if (newCash < newTaxReserve) {
     throw new HttpError(
@@ -1268,7 +1270,7 @@ async function buyStock(
         costCents,
         costCents + wash.deferredLossCents,
         wash.deferredLossCents,
-        newTaxReserve - seat.tax_reserve_cents,
+        taxDeltaCents,
         now,
       ),
     db
@@ -1354,6 +1356,8 @@ async function sellStock(
     newRealizedNet,
     game.tax_rate_bps,
   );
+  const taxDeltaCents =
+    newTaxReserve - seat.tax_reserve_cents;
   const newCash = seat.cash_cents + sale.proceedsCents;
   const tradeId = crypto.randomUUID();
   const statements: D1PreparedStatement[] = [
@@ -1382,7 +1386,7 @@ async function sellStock(
         sale.proceedsCents,
         sale.basisCents,
         sale.realizedGainCents,
-        newTaxReserve - seat.tax_reserve_cents,
+        taxDeltaCents,
         now,
       ),
   ];
@@ -1442,6 +1446,7 @@ async function sellStock(
       grossCents: sale.proceedsCents,
       basisCents: sale.basisCents,
       realizedGainCents: sale.realizedGainCents,
+      taxDeltaCents,
       taxReserveCents: newTaxReserve,
     },
   });
@@ -1779,6 +1784,7 @@ async function gameState(request: Request) {
       shares: microsToShares(Number(row.shares_micros)),
       priceCents: Number(row.price_cents),
       realizedGainCents: Number(row.realized_gain_cents),
+      taxDeltaCents: Number(row.tax_delta_cents),
       createdAt: Number(row.created_at),
     })),
     market: {

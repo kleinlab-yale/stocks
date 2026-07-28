@@ -25,6 +25,7 @@ The family league uses a consistent simulated tax model:
 - every sale realizes a gain or loss whether or not the proceeds are reinvested;
 - purchase lots are sold first-in, first-out;
 - net realized losses offset net realized gains;
+- a sale below its FIFO cost basis adds no tax and can reduce tax reserved from earlier gains;
 - 24% of positive net realized gains is locked as a tax reserve;
 - reserved tax cannot be spent and is subtracted from leaderboard value; and
 - a loss followed by a same-ticker repurchase within 30 days is deferred into the replacement lot’s cost basis.

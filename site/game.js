@@ -425,7 +425,7 @@
         </div>
         <div class="rules-grid">
           <details class="rule-item"><summary><strong>After-tax value</strong></summary><span>Cash + current holdings − reserved tax. This determines rank.</span></details>
-          <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of net realized gains. Reserved cash cannot fund a new purchase.</span></details>
+          <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of cumulative net realized gains. A losing sale adds no tax and can release tax reserved from earlier gains. Reserved cash cannot fund a new purchase.</span></details>
           <details class="rule-item"><summary><strong>FIFO basis</strong></summary><span>When shares are sold, the oldest purchase lots are treated as sold first.</span></details>
           <details class="rule-item"><summary><strong>Wash sales</strong></summary><span>A loss followed by a repurchase of the same ticker within 30 days is deferred into the new lot’s cost basis.</span></details>
           ${
@@ -875,7 +875,7 @@
               <strong>${escapeHtml(trade.playerName)} ${trade.side === "buy" ? "bought" : "sold"} ${shares(trade.shares)} ${escapeHtml(trade.symbol)}</strong>
               <span>${money(trade.priceCents)} per share${
                 trade.side === "sell"
-                  ? ` · <span class="${gainClass(trade.realizedGainCents)}" style="display:inline">${signedMoney(trade.realizedGainCents)} realized</span>`
+                  ? ` · <span class="${gainClass(trade.realizedGainCents)}" style="display:inline">${signedMoney(trade.realizedGainCents)} realized${trade.realizedGainCents < 0 ? " · no tax added" : trade.taxDeltaCents > 0 ? ` · ${money(trade.taxDeltaCents)} tax reserved` : " · offset by losses"}</span>`
                   : ""
               }</span>
             </div>
@@ -1173,8 +1173,20 @@
           shares: values.get("shares"),
         });
         await refresh({ quiet: true });
+        const saleTaxNote =
+          tradeSide !== "sell"
+            ? ""
+            : result.trade.realizedGainCents < 0
+              ? ` Realized loss: ${signedMoney(result.trade.realizedGainCents)}. No tax added${
+                  result.trade.taxDeltaCents < 0
+                    ? `; ${money(Math.abs(result.trade.taxDeltaCents))} was released from the tax reserve`
+                    : ""
+                }.`
+              : result.trade.taxDeltaCents > 0
+                ? ` Realized gain: ${signedMoney(result.trade.realizedGainCents)}; ${money(result.trade.taxDeltaCents)} added to the tax reserve.`
+                : ` Realized gain: ${signedMoney(result.trade.realizedGainCents)}; prior losses offset the tax.`;
         showToast(
-          `${tradeSide === "buy" ? "Bought" : "Sold"} ${shares(result.trade.shares)} ${result.trade.symbol} at ${money(result.trade.priceCents)}.`,
+          `${tradeSide === "buy" ? "Bought" : "Sold"} ${shares(result.trade.shares)} ${result.trade.symbol} at ${money(result.trade.priceCents)}.${saleTaxNote}`,
         );
       }
     } catch (error) {

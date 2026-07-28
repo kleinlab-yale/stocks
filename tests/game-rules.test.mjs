@@ -26,6 +26,29 @@ test("calculates a standardized 24 percent tax reserve on net gains", () => {
   assert.equal(taxReserveCents(-100_000, 2_400), 0);
 });
 
+test("never adds tax to a sale at a realized loss", () => {
+  const sale = allocateFifoSale(
+    [
+      {
+        id: "loss-lot",
+        remainingSharesMicros: SHARES_SCALE,
+        remainingBasisCents: 20_000,
+      },
+    ],
+    SHARES_SCALE,
+    10_000,
+  );
+  assert.equal(sale.realizedGainCents, -10_000);
+  assert.equal(taxReserveCents(sale.realizedGainCents, 2_400), 0);
+
+  const reserveBeforeLoss = taxReserveCents(50_000, 2_400);
+  const reserveAfterLoss = taxReserveCents(
+    50_000 + sale.realizedGainCents,
+    2_400,
+  );
+  assert.ok(reserveAfterLoss < reserveBeforeLoss);
+});
+
 test("allocates sales through FIFO lots and calculates the realized gain", () => {
   const result = allocateFifoSale(
     [
