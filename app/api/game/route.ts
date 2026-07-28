@@ -1,4 +1,5 @@
 import { getD1 } from "@/db";
+import { getRequestExecutionContext } from "vinext/shims/request-context";
 import {
   afterTaxValueCents,
   allocateFifoSale,
@@ -27,6 +28,9 @@ const MAX_SEATS = 8;
 const WASH_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_EXECUTION_QUOTE_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 const QUOTE_MEMORY_TTL_MS = 60 * 1_000;
+const MARKET_MEMORY_TTL_MS = 30 * 1_000;
+const MARKET_FETCH_TIMEOUT_MS = 6 * 1_000;
+const QUOTE_FETCH_TIMEOUT_MS = 6 * 1_000;
 
 type GameRow = {
   id: string;
@@ -125,6 +129,10 @@ const quoteMemoryCache = new Map<
   string,
   { expiresAt: number; quote: ResolvedQuote }
 >();
+const quoteRefreshesInFlight = new Set<string>();
+let marketMemoryCache:
+  | { expiresAt: number; snapshot: MarketSnapshot }
+  | undefined;
 
 class HttpError extends Error {
   status: number;
@@ -252,14 +260,28 @@ async function requirePlayer(
 }
 
 async function fetchMarket() {
-  const response = await fetch(`${MARKET_URL}?game=${Date.now()}`, {
-    cache: "no-store",
-  });
-  if (!response.ok) {
+  if (marketMemoryCache && marketMemoryCache.expiresAt > Date.now()) {
+    return marketMemoryCache.snapshot;
+  }
+  try {
+    const cacheWindow = Math.floor(Date.now() / MARKET_MEMORY_TTL_MS);
+    const response = await fetch(`${MARKET_URL}?game=${cacheWindow}`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(MARKET_FETCH_TIMEOUT_MS),
+    });
+    if (!response.ok) {
+      throw new Error(`Market snapshot returned ${response.status}.`);
+    }
+    const snapshot = (await response.json()) as MarketSnapshot;
+    marketMemoryCache = {
+      expiresAt: Date.now() + MARKET_MEMORY_TTL_MS,
+      snapshot,
+    };
+    return snapshot;
+  } catch {
+    if (marketMemoryCache) return marketMemoryCache.snapshot;
     throw new HttpError(503, "The shared market snapshot is unavailable.");
   }
-  const snapshot = (await response.json()) as MarketSnapshot;
-  return snapshot;
 }
 
 function moneyStringToCents(value: unknown) {
@@ -319,6 +341,28 @@ async function cachedQuote(db: D1Database, symbol: string) {
   };
 }
 
+async function cachedQuotes(db: D1Database, symbols: string[]) {
+  if (!symbols.length) return [];
+  const placeholders = symbols.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(
+      `SELECT * FROM quote_cache WHERE symbol IN (${placeholders})`,
+    )
+    .bind(...symbols)
+    .all<QuoteCacheRow>();
+  return rows.results.map(
+    (row) =>
+      ({
+        symbol: row.symbol,
+        name: row.name,
+        priceCents: row.price_cents,
+        previousCloseCents: row.previous_close_cents,
+        generatedAt: new Date(row.quoted_at).toISOString(),
+        source: row.source,
+      }) satisfies ResolvedQuote,
+  );
+}
+
 async function fetchNasdaqInfo(
   symbol: string,
   assetClass: "stocks" | "etf",
@@ -327,6 +371,7 @@ async function fetchNasdaqInfo(
     `${NASDAQ_QUOTE_URL}/${encodeURIComponent(symbol)}/info?assetclass=${assetClass}`,
     {
       cache: "no-store",
+      signal: AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS),
       headers: {
         Accept: "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
@@ -441,6 +486,25 @@ async function resolveQuote(
       `The latest price for ${symbol} is temporarily unavailable.`,
     );
   }
+}
+
+function refreshQuotesInBackground(
+  db: D1Database,
+  symbols: string[],
+) {
+  const context = getRequestExecutionContext();
+  if (!context) return;
+  const pendingSymbols = symbols.filter(
+    (symbol) => !quoteRefreshesInFlight.has(symbol),
+  );
+  if (!pendingSymbols.length) return;
+  pendingSymbols.forEach((symbol) => quoteRefreshesInFlight.add(symbol));
+  const refresh = Promise.allSettled(
+    pendingSymbols.map((symbol) => resolveQuote(db, symbol)),
+  ).then(() => {
+    pendingSymbols.forEach((symbol) => quoteRefreshesInFlight.delete(symbol));
+  });
+  context.waitUntil(refresh);
 }
 
 async function createGame(request: Request, payload: Record<string, unknown>) {
@@ -991,17 +1055,8 @@ async function gameState(request: Request) {
         .filter((symbol) => !configuredSymbols.has(symbol)),
     ),
   ];
-  const additionalQuotes = (
-    await Promise.all(
-      additionalSymbols.map(async (symbol) => {
-        try {
-          return await resolveQuote(db, symbol);
-        } catch {
-          return null;
-        }
-      }),
-    )
-  ).filter((item): item is ResolvedQuote => Boolean(item));
+  const additionalQuotes = await cachedQuotes(db, additionalSymbols);
+  refreshQuotesInBackground(db, additionalSymbols);
   const allQuotes = [...configuredQuotes, ...additionalQuotes];
   const quotes = new Map(allQuotes.map((item) => [item.symbol, item]));
   const joinedSeats = seatResult.results.filter((seat) => seat.player_name);

@@ -46,6 +46,29 @@ test("allocates sales through FIFO lots and calculates the realized gain", () =>
   assert.equal(result.allocations[1].remainingBasisCents, 15_000);
 });
 
+test("allocates a sale from D1 snake-case lot rows", () => {
+  const result = allocateFifoSale(
+    [
+      {
+        id: "d1-lot",
+        remaining_shares_micros: 2 * SHARES_SCALE,
+        remaining_basis_cents: 20_000,
+      },
+    ],
+    SHARES_SCALE,
+    15_000,
+  );
+  assert.equal(result.proceedsCents, 15_000);
+  assert.equal(result.basisCents, 10_000);
+  assert.deepEqual(result.allocations[0], {
+    id: "d1-lot",
+    sharesMicros: SHARES_SCALE,
+    basisCents: 10_000,
+    remainingSharesMicros: SHARES_SCALE,
+    remainingBasisCents: 10_000,
+  });
+});
+
 test("defers a wash-sale loss proportionally into replacement shares", () => {
   const result = applyPendingWashLosses(
     [
@@ -62,6 +85,25 @@ test("defers a wash-sale loss proportionally into replacement shares", () => {
     id: "wash-1",
     remainingSharesMicros: 3 * SHARES_SCALE,
     remainingLossCents: 6_000,
+  });
+});
+
+test("applies wash-sale losses from D1 snake-case rows", () => {
+  const result = applyPendingWashLosses(
+    [
+      {
+        id: "d1-wash",
+        remaining_shares_micros: 2 * SHARES_SCALE,
+        remaining_loss_cents: 4_000,
+      },
+    ],
+    SHARES_SCALE,
+  );
+  assert.equal(result.deferredLossCents, 2_000);
+  assert.deepEqual(result.updates[0], {
+    id: "d1-wash",
+    remainingSharesMicros: SHARES_SCALE,
+    remainingLossCents: 2_000,
   });
 });
 

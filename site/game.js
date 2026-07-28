@@ -23,6 +23,7 @@
   let tradeSide = "buy";
   let tradeSymbol = "";
   let refreshTimer = null;
+  let refreshInFlight = false;
   const checkedQuotes = new Map();
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
@@ -627,6 +628,7 @@
   }
 
   async function refresh({ quiet = false } = {}) {
+    if (quiet && refreshInFlight) return;
     if (!gameId) {
       renderGateway();
       return;
@@ -645,6 +647,7 @@
         </div></section>`;
       return;
     }
+    refreshInFlight = true;
     try {
       const data = await apiRequest("GET");
       snapshot = data;
@@ -669,6 +672,8 @@
           <p>The private link may have been reissued, or the service may be refreshing.</p>
           <button class="primary-action" type="button" data-action="refresh" style="width:100%">Try again</button>
         </div></section>`;
+    } finally {
+      refreshInFlight = false;
     }
   }
 
