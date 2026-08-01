@@ -10,6 +10,7 @@ The host can:
 
 - invite up to eight players without email addresses or passwords;
 - occupy a player seat while retaining separate host controls;
+- copy a complete private host recovery link that opens Host controls in another browser;
 - see every player name beside the private link stored on the host device;
 - resend, recover, or replace a player link without changing that live seat's cash, holdings, trades, tax, dividends, or rank;
 - invite a new player into any open seat after the game has started;
@@ -21,7 +22,7 @@ Players can enter any valid U.S.-listed stock or ETF ticker, check its newest av
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
-Named family players have lightweight generated character portraits and nicknames in the identity banner, host seat controls, trend selectors, and leaderboard. Unknown or newly added names receive an initial-based fallback avatar.
+Named family players have lightweight generated character portraits in the identity banner, host seat controls, trend selectors, and leaderboard. Matching tolerates the nicknames already saved in the live league, including `AI D.A.R.Y.L.` and quoted family titles. Unknown or newly added names receive an initial-based fallback avatar.
 
 Cash dividends are credited automatically on the payment date using the shares held before the ex-dividend date. The game records each payment in a permanent dividend ledger and reserves 24% as game tax. Only dividends whose ex-dividend date is on or after feature activation are eligible, so enabling it for a live league never manufactures payments from older events.
 
@@ -57,7 +58,7 @@ The service source lives in the same repository:
 - `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
 - `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
 
-Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a device that still has the host link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. A lost host link still cannot be recovered from another browser.
+Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete host recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. The Host tab exposes a private recovery link for another browser; if that complete link and every authorized host browser are both lost, the host credential cannot be reconstructed.
 
 ## Change the tracked tickers
 

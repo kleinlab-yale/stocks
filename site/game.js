@@ -71,8 +71,26 @@
       .replaceAll("'", "&#039;");
   }
 
+  function normalizedPlayerName(value) {
+    return String(value ?? "")
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
+  }
+
   function playerCharacter(playerName) {
-    return PLAYER_CHARACTERS[String(playerName ?? "").trim().toLowerCase()] ?? null;
+    const normalized = normalizedPlayerName(playerName);
+    const compact = normalized.replace(/[^a-z0-9]/g, "");
+
+    if (compact.includes("daryl") || /(^|[^a-z0-9])ai([^a-z0-9]|$)/.test(normalized)) {
+      return PLAYER_CHARACTERS.daryl;
+    }
+
+    const familyName = ["grandpa", "grandma", "cher", "henry", "may"].find((name) =>
+      new RegExp(`(^|[^a-z0-9])${name}([^a-z0-9]|$)`).test(normalized),
+    );
+    return familyName ? PLAYER_CHARACTERS[familyName] : null;
   }
 
   function renderPlayerAvatar(playerName, className = "") {
@@ -87,8 +105,16 @@
 
   function renderPlayerNickname(playerName) {
     const nickname = playerCharacter(playerName)?.nickname;
+    const normalizedName = normalizedPlayerName(playerName);
+    const normalizedNickname = normalizedPlayerName(nickname);
+    const nicknameAlreadyShown =
+      nickname === "$"
+        ? String(playerName ?? "").includes("$")
+        : normalizedNickname && normalizedName.includes(normalizedNickname);
     return nickname
-      ? `<em class="player-nickname">“${escapeHtml(nickname)}”</em>`
+      ? nicknameAlreadyShown
+        ? ""
+        : `<em class="player-nickname">“${escapeHtml(nickname)}”</em>`
       : "";
   }
 
@@ -413,6 +439,33 @@
     return url.href;
   }
 
+  function hostUrl() {
+    const token = tokenFor("host");
+    if (!token) return "";
+    const url = new URL("./game.html", window.location.href);
+    url.search = "";
+    url.searchParams.set("game", gameId);
+    url.searchParams.set("host", token);
+    return url.href;
+  }
+
+  function renderHostRecoveryLink() {
+    const link = hostUrl();
+    if (!link) return "";
+    return `
+      <div class="host-recovery">
+        <div>
+          <strong>Private host recovery link</strong>
+          <span>Save this complete link to open Host controls in another browser. Anyone with it can manage the league.</span>
+        </div>
+        <div class="invite-tools">
+          <input class="invite-link" value="${escapeHtml(link)}" readonly aria-label="Private host recovery link">
+          <button class="copy-action" type="button" data-action="copy" data-link="${escapeHtml(link)}">Copy host link</button>
+        </div>
+      </div>
+    `;
+  }
+
   function renderHostLobby(data) {
     const joined = data.seats.filter((seat) => seat.joined).length;
     const tokens = invitationTokens();
@@ -468,6 +521,7 @@
         <p>Copy each private link and send it to one family member. You can occupy a seat too while keeping this host view.</p>
         <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
       </section>
+      ${renderHostRecoveryLink()}
       <section class="seat-grid">${cards}</section>
       ${renderRules(data.game.periodBonusesEnabled === true, data.game.dividendsEnabled === true)}
     `;
@@ -519,6 +573,7 @@
           <span class="host-lock">Host token verified</span>
         </div>
         <p class="host-note">Resend a player’s existing link, or invite someone into any open seat. Replacing a link never changes that seat’s cash, trades, holdings, tax, dividends, or rank—but the old link will stop working.</p>
+        ${renderHostRecoveryLink()}
         <div class="seat-grid host-seat-grid">${cards}</div>
         ${
           data.game.status === "active"
@@ -1217,7 +1272,7 @@
         <section class="join-wrap"><div class="join-card">
           <div class="seat-badge">!</div><p class="eyebrow">Private game</p>
           <h1>This link is missing its invitation.</h1>
-          <p>Ask the host to send you the complete private player link.</p>
+          <p>This address identifies the league but does not grant access. Ask the host for your complete private player link, or use the complete host recovery link saved from Host controls.</p>
           <a class="secondary-action" href="./game.html" style="display:grid;place-items:center;text-decoration:none">Start a new game</a>
         </div></section>`;
       return;
@@ -1397,7 +1452,7 @@
       } else if (action === "copy") {
         await copyText(button.dataset.link);
         button.textContent = "Copied";
-        showToast("Private invitation copied.");
+        showToast("Private link copied.");
       } else if (action === "join-seat") {
         const tokens = invitationTokens();
         const token = tokens[String(button.dataset.seat)];
