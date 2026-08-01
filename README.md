@@ -10,6 +10,9 @@ The host can:
 
 - invite up to eight players without email addresses or passwords;
 - occupy a player seat while retaining separate host controls;
+- see every player name beside the private link stored on the host device;
+- resend, recover, or replace a player link without changing that live seat's cash, holdings, trades, tax, dividends, or rank;
+- invite a new player into any open seat after the game has started;
 - reissue an unclaimed invitation or clear a lobby seat;
 - start after at least two players have joined; and
 - end the game early and lock the final standings.
@@ -17,6 +20,8 @@ The host can:
 Players can enter any valid U.S.-listed stock or ETF ticker, check its newest available price, and buy or sell fractional shares whenever the game is active, including nights and weekends. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Orders use the newest shared quote available—regular-market, pre-market, after-hours, or the most recent closing snapshot—and show that quote’s source and timestamp before execution. A quote more than seven days old cannot execute a trade. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
+
+Cash dividends are credited automatically on the payment date using the shares held before the ex-dividend date. The game records each payment in a permanent dividend ledger and reserves 24% as game tax. Dividend settlement is forward-only from the feature activation date, so enabling it for a live league never manufactures payments from older holdings.
 
 ### Game taxation
 
@@ -27,6 +32,7 @@ The family league uses a consistent simulated tax model:
 - net realized losses offset net realized gains;
 - a sale below its FIFO cost basis adds no tax and can reduce tax reserved from earlier gains;
 - 24% of positive net realized gains is locked as a tax reserve;
+- 24% of dividend income is also locked as game tax;
 - reserved tax cannot be spent and is subtracted from leaderboard value; and
 - a loss followed by a same-ticker repurchase within 30 days is deferred into the replacement lot’s cost basis.
 
@@ -49,7 +55,7 @@ The service source lives in the same repository:
 - `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
 - `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
 
-Because this first version deliberately avoids accounts, a lost private player link cannot be recovered; the host can reissue that seat before the game starts. A lost host link means the host controls cannot be recovered from another browser.
+Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a device that still has the host link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. A lost host link still cannot be recovered from another browser.
 
 ## Change the tracked tickers
 

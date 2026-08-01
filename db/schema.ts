@@ -19,6 +19,7 @@ export const games = sqliteTable("games", {
   periodBonusesEnabled: integer("period_bonuses_enabled")
     .notNull()
     .default(0),
+  dividendsEnabledAt: integer("dividends_enabled_at"),
   createdAt: integer("created_at").notNull(),
   startedAt: integer("started_at"),
   endsAt: integer("ends_at"),
@@ -38,6 +39,10 @@ export const seats = sqliteTable(
     joinedAt: integer("joined_at"),
     cashCents: integer("cash_cents").notNull(),
     bonusCents: integer("bonus_cents").notNull().default(0),
+    dividendIncomeCents: integer("dividend_income_cents")
+      .notNull()
+      .default(0),
+    dividendTaxCents: integer("dividend_tax_cents").notNull().default(0),
     realizedNetCents: integer("realized_net_cents").notNull().default(0),
     taxReserveCents: integer("tax_reserve_cents").notNull().default(0),
   },
@@ -142,6 +147,46 @@ export const quoteCache = sqliteTable("quote_cache", {
   source: text("source").notNull(),
   updatedAt: integer("updated_at").notNull(),
 });
+
+export const dividendEventCache = sqliteTable("dividend_event_cache", {
+  symbol: text("symbol").primaryKey(),
+  payloadJson: text("payload_json").notNull(),
+  fetchedAt: integer("fetched_at").notNull(),
+});
+
+export const dividendPayments = sqliteTable(
+  "dividend_payments",
+  {
+    id: text("id").primaryKey(),
+    gameId: text("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    seatId: text("seat_id")
+      .notNull()
+      .references(() => seats.id, { onDelete: "cascade" }),
+    symbol: text("symbol").notNull(),
+    exDate: text("ex_date").notNull(),
+    paymentDate: text("payment_date").notNull(),
+    sharesMicros: integer("shares_micros").notNull(),
+    amountPerShareMicros: integer("amount_per_share_micros").notNull(),
+    grossCents: integer("gross_cents").notNull(),
+    taxCents: integer("tax_cents").notNull(),
+    creditedAt: integer("credited_at"),
+  },
+  (table) => [
+    uniqueIndex("dividend_payments_game_seat_event_unique").on(
+      table.gameId,
+      table.seatId,
+      table.symbol,
+      table.exDate,
+      table.paymentDate,
+    ),
+    index("dividend_payments_game_time_idx").on(
+      table.gameId,
+      table.creditedAt,
+    ),
+  ],
+);
 
 export const portfolioSnapshots = sqliteTable(
   "portfolio_snapshots",

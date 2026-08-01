@@ -79,6 +79,15 @@
     });
   }
 
+  function dollars(value) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    }).format(Number(value || 0));
+  }
+
   function dateTime(value) {
     if (!value) return "—";
     return new Intl.DateTimeFormat("en-US", {
@@ -143,7 +152,7 @@
     roleSwitch.hidden = !hasBoth;
     if (hasBoth) {
       roleSwitch.textContent =
-        currentRole === "host" ? "Player view" : "Host view";
+        currentRole === "host" ? "Switch to player" : "Host controls";
     }
   }
 
@@ -372,7 +381,7 @@
               <span>${seat.joined ? escapeHtml(seat.playerName) : token ? "Invitation ready" : "Link not on this device"}</span>
             </div>
             ${
-              !seat.joined && link
+              link
                 ? `<div class="invite-tools">
                     <input class="invite-link" value="${escapeHtml(link)}" readonly aria-label="Seat ${seat.seatNumber} invitation link">
                     <button class="copy-action" type="button" data-action="copy" data-link="${escapeHtml(link)}">Copy</button>
@@ -413,11 +422,64 @@
         <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
       </section>
       <section class="seat-grid">${cards}</section>
-      ${renderRules(data.game.periodBonusesEnabled === true)}
+      ${renderRules(data.game.periodBonusesEnabled === true, data.game.dividendsEnabled === true)}
     `;
   }
 
-  function renderRules(bonusEnabled = false) {
+  function renderHostControls(data) {
+    if (currentRole !== "host") return "";
+    const tokens = invitationTokens();
+    const cards = data.seats
+      .map((seat) => {
+        const token = tokens[String(seat.seatNumber)];
+        const link = token ? inviteUrl(token) : "";
+        return `
+          <article class="seat-card${seat.joined ? " claimed" : ""}">
+            <div class="seat-card-top">
+              <strong>Seat ${seat.seatNumber}</strong>
+              <span>${seat.joined ? escapeHtml(seat.playerName) : "Open for a new player"}</span>
+            </div>
+            ${
+              link
+                ? `<div class="invite-tools">
+                    <input class="invite-link" value="${escapeHtml(link)}" readonly aria-label="${seat.joined ? escapeHtml(seat.playerName) : `Seat ${seat.seatNumber}`} private player link">
+                    <button class="copy-action" type="button" data-action="copy" data-link="${escapeHtml(link)}">${seat.joined ? "Copy link" : "Invite"}</button>
+                  </div>`
+                : `<p class="missing-link">This device does not have the original private link. Make a replacement below; the portfolio and game history will stay intact.</p>`
+            }
+            <div class="seat-actions">
+              <button class="secondary-action" type="button" data-action="replace-seat-link" data-seat="${seat.seatNumber}">
+                ${link ? "Replace private link" : seat.joined ? "Recover private link" : "Create invite link"}
+              </button>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+    return `
+      <section class="panel host-panel">
+        <div class="panel-heading host-panel-heading">
+          <div>
+            <p class="eyebrow">Host-only access</p>
+            <h2>Players & private links</h2>
+          </div>
+          <span class="host-lock">Host token verified</span>
+        </div>
+        <p class="host-note">Resend a player’s existing link, or invite someone into any open seat. Replacing a link never changes that seat’s cash, trades, holdings, tax, dividends, or rank—but the old link will stop working.</p>
+        <div class="seat-grid host-seat-grid">${cards}</div>
+        ${
+          data.game.status === "active"
+            ? `<div class="host-danger-zone">
+                <div><strong>End this game</strong><span>Locks trading and records the final standings for everyone.</span></div>
+                <button class="danger-action" type="button" data-action="end-game">End game now</button>
+              </div>`
+            : ""
+        }
+      </section>
+    `;
+  }
+
+  function renderRules(bonusEnabled = false, dividendsEnabled = false) {
     return `
       <section class="panel rules-panel">
         <div class="panel-heading">
@@ -425,12 +487,17 @@
         </div>
         <div class="rules-grid">
           <details class="rule-item"><summary><strong>After-tax value</strong></summary><span>Cash + current holdings − reserved tax. This determines rank.</span></details>
-          <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of cumulative net realized gains. A losing sale adds no tax and can release tax reserved from earlier gains. Reserved cash cannot fund a new purchase.</span></details>
+          <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of cumulative net realized gains, plus the game tax tracked on dividend income. A losing sale adds no capital-gains tax and can release tax reserved from earlier gains. Reserved cash cannot fund a new purchase.</span></details>
           <details class="rule-item"><summary><strong>FIFO basis</strong></summary><span>When shares are sold, the oldest purchase lots are treated as sold first.</span></details>
           <details class="rule-item"><summary><strong>Wash sales</strong></summary><span>A loss followed by a repurchase of the same ticker within 30 days is deferred into the new lot’s cost basis.</span></details>
           ${
             bonusEnabled
               ? "<details class=\"rule-item\"><summary><strong>Period bonuses</strong></summary><span>Completed New York-time periods award $100 daily, $1,000 weekly, and $10,000 monthly. Bonuses become spendable game cash and remain in the lifetime Bonus bank. Tied periods pay no bonus.</span></details>"
+              : ""
+          }
+          ${
+            dividendsEnabled
+              ? "<details class=\"rule-item\"><summary><strong>Dividends</strong></summary><span>Cash dividends are credited on the payment date using the shares held before the ex-dividend date. A 24% game-tax reserve is withheld. Dividends announced before this feature was enabled are not paid retroactively.</span></details>"
               : ""
           }
         </div>
@@ -537,7 +604,7 @@
           <details class="leaderboard-row${player.seatId === youSeat ? " you" : ""}">
             <summary>
               <span class="rank-number">${player.rank}</span>
-              <span class="leader-name"><strong>${escapeHtml(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}</span></span>
+              <span class="leader-name"><strong>${escapeHtml(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""}</span></span>
               <span class="leader-metric"><span>After tax</span><strong>${money(player.afterTaxCents)}</strong></span>
               <span class="leader-metric cash"><span>Cash</span><strong>${money(player.spendableCashCents)}</strong></span>
               <span class="leader-metric tax"><span>Return</span><strong class="${gainClass(player.returnPercent)}">${percent(player.returnPercent)}</strong></span>
@@ -751,6 +818,57 @@
     `;
   }
 
+  function renderDividendLedger(data) {
+    if (
+      data.game.dividendsEnabled !== true ||
+      !Array.isArray(data.dividendPayments)
+    ) {
+      return "";
+    }
+    const totals = [...data.leaderboard]
+      .sort(
+        (left, right) =>
+          Number(right.dividendIncomeCents || 0) -
+          Number(left.dividendIncomeCents || 0),
+      )
+      .map(
+        (player) => `
+          <div class="bonus-total-row">
+            <strong>${escapeHtml(player.playerName)}</strong>
+            <span>${money(player.dividendIncomeCents || 0)}</span>
+          </div>`,
+      )
+      .join("");
+    const history = data.dividendPayments.length
+      ? `<details class="bonus-history">
+          <summary>All dividend payments (${data.dividendPayments.length})</summary>
+          <div class="bonus-history-list">
+            ${data.dividendPayments
+              .map(
+                (payment) => `
+                  <div class="dividend-payment-row">
+                    <span><strong>${escapeHtml(payment.playerName)}</strong> · ${escapeHtml(payment.symbol)}</span>
+                    <span>${shares(payment.shares)} shares × ${dollars(payment.amountPerShare)}</span>
+                    <span>Paid ${escapeHtml(payment.paymentDate)} · ${money(payment.taxCents)} tax reserved</span>
+                    <strong>${money(payment.grossCents)}</strong>
+                  </div>`,
+              )
+              .join("")}
+          </div>
+        </details>`
+      : '<div class="empty-compact">No dividend payments yet. Eligible cash dividends will appear here automatically on their payment date.</div>';
+    return `
+      <section class="panel bonus-panel dividend-panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">Portfolio income</p><h2>Dividend ledger</h2></div>
+          <p>Gross cash credited · 24% game-tax reserve tracked separately</p>
+        </div>
+        <div class="bonus-total-list">${totals}</div>
+        ${history}
+      </section>
+    `;
+  }
+
   function drawPlayerTrends(data) {
     const canvas = document.querySelector("#player-trend-chart");
     if (!canvas) return;
@@ -900,6 +1018,11 @@
     );
 
     root.innerHTML = `
+      <div class="identity-banner ${you ? "player" : "host"}">
+        <span>${you ? "Playing as" : "Private host session"}</span>
+        <strong>${you ? escapeHtml(you.playerName) : "HOST CONTROLS"}</strong>
+        <small>${you ? `Seat ${you.seatNumber} · Only trades from this private link affect ${escapeHtml(you.playerName)}’s portfolio.` : "Only this verified host link can manage players or end the game. Player links never see these controls."}</small>
+      </div>
       <div class="game-topline">
         <div class="game-title">
           <span class="state-pill ${stateClass}">${escapeHtml(data.game.status)}</span>
@@ -908,11 +1031,6 @@
         </div>
         <div class="game-actions">
           <button class="secondary-action" type="button" data-action="refresh">Refresh</button>
-          ${
-            currentRole === "host" && data.game.status === "active"
-              ? `<button class="danger-action" type="button" data-action="end-game">End game now</button>`
-              : ""
-          }
         </div>
       </div>
       <section class="game-board">
@@ -929,7 +1047,7 @@
         <div class="game-board-cell game-board-metric tax">
           <span>${you ? "Tax reserve" : "Players"}</span>
           <strong>${you ? money(you.taxReserveCents) : joined}</strong>
-          <small>${you ? "24% of net realized gains" : "Up to eight family members"}</small>
+          <small>${you ? "Capital gains + dividend tax" : "Up to eight family members"}</small>
         </div>
         <div class="game-board-cell game-board-metric rank">
           <span>${you ? "Your rank" : "Time left"}</span>
@@ -945,6 +1063,7 @@
           }</small>
         </div>
       </section>
+      ${renderHostControls(data)}
       ${renderPlayerTrends(data)}
       <div class="game-layout">
         <div>
@@ -971,12 +1090,13 @@
         ${renderLeaderboard(data)}
       </section>
       ${renderBonusBank(data)}
+      ${renderDividendLedger(data)}
       ${
         you
           ? `<section class="panel leaderboard-panel"><div class="panel-heading"><div><p class="eyebrow">League tape</p><h2>Recent activity</h2></div></div>${renderActivity(data.recentTrades)}</section>`
           : ""
       }
-      ${renderRules(data.game.periodBonusesEnabled === true)}
+      ${renderRules(data.game.periodBonusesEnabled === true, data.game.dividendsEnabled === true)}
     `;
     updateTradePreview();
     drawPlayerTrends(data);
@@ -1246,10 +1366,38 @@
           seatNumber,
         });
         const tokens = invitationTokens();
+        const priorToken = tokens[String(seatNumber)];
         tokens[String(seatNumber)] = result.token;
         saveInvitationTokens(tokens);
+        if (priorToken && getStored("player") === priorToken) {
+          setStored("player", result.token);
+        }
         await refresh({ quiet: true });
         showToast(`Seat ${seatNumber} now has a new private link.`);
+      } else if (action === "replace-seat-link") {
+        const seatNumber = Number(button.dataset.seat);
+        const seat = snapshot.seats.find((item) => item.seatNumber === seatNumber);
+        const warning = seat?.joined
+          ? `Replace ${seat.playerName}’s private link? Their old link will stop working, but their complete portfolio and game history will stay unchanged.`
+          : `Replace the invitation for open seat ${seatNumber}? The older invitation will stop working.`;
+        if (!window.confirm(warning)) return;
+        button.disabled = true;
+        const result = await apiRequest("POST", {
+          action: "replaceSeatLink",
+          gameId,
+          seatNumber,
+        });
+        const tokens = invitationTokens();
+        const priorToken = tokens[String(seatNumber)];
+        tokens[String(seatNumber)] = result.token;
+        saveInvitationTokens(tokens);
+        if (priorToken && getStored("player") === priorToken) {
+          setStored("player", result.token);
+        }
+        await refresh({ quiet: true });
+        showToast(
+          `${seat?.playerName || `Seat ${seatNumber}`} now has a new private link. The portfolio was not changed.`,
+        );
       } else if (action === "start-game") {
         button.disabled = true;
         await apiRequest("POST", { action: "start", gameId });

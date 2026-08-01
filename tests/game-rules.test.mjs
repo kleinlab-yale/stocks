@@ -6,13 +6,17 @@ import {
   allocateFifoSale,
   applyPendingWashLosses,
   completedCompetitionPeriod,
+  dividendGrossCents,
+  easternTimestampForUsDate,
   grossCents,
   gameEndsAt,
   quoteTimestampIsExecutable,
   selectPeriodBonusWinner,
+  sharesHeldMicrosAt,
   sharesToMicros,
   targetValueReached,
   taxReserveCents,
+  totalTaxReserveCents,
   tradingIsActive,
 } from "../lib/game-rules.js";
 
@@ -24,6 +28,47 @@ test("converts fractional shares and values a trade in cents", () => {
 test("calculates a standardized 24 percent tax reserve on net gains", () => {
   assert.equal(taxReserveCents(100_000, 2_400), 24_000);
   assert.equal(taxReserveCents(-100_000, 2_400), 0);
+});
+
+test("keeps dividend tax reserved when a later stock sale is a loss", () => {
+  assert.equal(totalTaxReserveCents(-10_000, 240, 2_400), 240);
+  assert.equal(totalTaxReserveCents(10_000, 240, 2_400), 2_640);
+});
+
+test("calculates fractional-share dividends to the nearest cent", () => {
+  assert.equal(
+    dividendGrossCents(2.5 * SHARES_SCALE, 250_000),
+    63,
+  );
+  assert.equal(dividendGrossCents(SHARES_SCALE, 2_500), 0);
+});
+
+test("uses shares owned before the ex-dividend date", () => {
+  const exAt = Date.parse("2026-08-10T04:00:00Z");
+  assert.equal(
+    sharesHeldMicrosAt(
+      [
+        { side: "buy", shares_micros: 4 * SHARES_SCALE, created_at: exAt - 2 },
+        { side: "sell", shares_micros: SHARES_SCALE, created_at: exAt - 1 },
+        { side: "buy", shares_micros: 9 * SHARES_SCALE, created_at: exAt },
+        { side: "sell", shares_micros: 2 * SHARES_SCALE, created_at: exAt + 1 },
+      ],
+      exAt,
+    ),
+    3 * SHARES_SCALE,
+  );
+});
+
+test("parses Nasdaq dividend dates at New York midnight", () => {
+  assert.equal(
+    easternTimestampForUsDate("08/10/2026"),
+    Date.parse("2026-08-10T04:00:00Z"),
+  );
+  assert.equal(
+    easternTimestampForUsDate("12/10/2026"),
+    Date.parse("2026-12-10T05:00:00Z"),
+  );
+  assert.equal(easternTimestampForUsDate("02/30/2026"), null);
 });
 
 test("never adds tax to a sale at a realized loss", () => {

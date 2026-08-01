@@ -5,14 +5,17 @@ import {
   allocateFifoSale,
   applyPendingWashLosses,
   completedCompetitionPeriod,
+  dividendGrossCents,
+  easternTimestampForUsDate,
   gameEndsAt,
   grossCents,
   microsToShares,
   quoteTimestampIsExecutable,
   selectPeriodBonusWinner,
+  sharesHeldMicrosAt,
   sharesToMicros,
   targetValueReached,
-  taxReserveCents,
+  totalTaxReserveCents,
   tradingIsActive,
 } from "@/lib/game-rules.js";
 
@@ -39,6 +42,7 @@ const QUOTE_MEMORY_TTL_MS = 60 * 1_000;
 const MARKET_MEMORY_TTL_MS = 30 * 1_000;
 const MARKET_FETCH_TIMEOUT_MS = 6 * 1_000;
 const QUOTE_FETCH_TIMEOUT_MS = 6 * 1_000;
+const DIVIDEND_CACHE_TTL_MS = 12 * 60 * 60 * 1_000;
 const PORTFOLIO_SNAPSHOT_INTERVAL_MS = 30 * 60 * 1_000;
 const MAX_TREND_POINTS = 120;
 const PERIOD_BONUSES_CENTS = {
@@ -58,6 +62,7 @@ type GameRow = {
   target_value_cents: number | null;
   winner_seat_id: string | null;
   period_bonuses_enabled: number;
+  dividends_enabled_at: number | null;
   created_at: number;
   started_at: number | null;
   ends_at: number | null;
@@ -73,6 +78,8 @@ type SeatRow = {
   joined_at: number | null;
   cash_cents: number;
   bonus_cents: number;
+  dividend_income_cents: number;
+  dividend_tax_cents: number;
   realized_net_cents: number;
   tax_reserve_cents: number;
 };
@@ -161,11 +168,47 @@ type NasdaqInfoResponse = {
   status?: { rCode?: number };
 };
 
+type NasdaqDividendRow = {
+  exOrEffDate?: string;
+  type?: string;
+  amount?: string;
+  paymentDate?: string;
+  currency?: string;
+};
+
+type NasdaqDividendResponse = {
+  data?: {
+    dividends?: { rows?: NasdaqDividendRow[] | null } | null;
+  } | null;
+  status?: { rCode?: number };
+};
+
+type DividendEvent = {
+  exDate: string;
+  paymentDate: string;
+  amountPerShareMicros: number;
+};
+
+type DividendCacheRow = {
+  symbol: string;
+  payload_json: string;
+  fetched_at: number;
+};
+
+type DividendTradeRow = {
+  seat_id: string;
+  symbol: string;
+  side: string;
+  shares_micros: number;
+  created_at: number;
+};
+
 const quoteMemoryCache = new Map<
   string,
   { expiresAt: number; quote: ResolvedQuote }
 >();
 const quoteRefreshesInFlight = new Set<string>();
+const dividendRefreshesInFlight = new Set<string>();
 let marketMemoryCache:
   | { expiresAt: number; snapshot: MarketSnapshot }
   | undefined;
@@ -441,6 +484,289 @@ async function fetchNasdaqInfo(
     ).toISOString(),
     source: "Nasdaq Last Sale",
   };
+}
+
+function dividendAmountToMicros(value: unknown) {
+  const amount = Number(
+    String(value ?? "")
+      .replace(/[^0-9.-]/g, ""),
+  );
+  return Number.isFinite(amount) && amount > 0
+    ? Math.round(amount * 1_000_000)
+    : null;
+}
+
+function dividendEventsFromPayload(payload: NasdaqDividendResponse) {
+  if (payload.status?.rCode !== 200) return [];
+  return (payload.data?.dividends?.rows ?? [])
+    .map((row): DividendEvent | null => {
+      const amountPerShareMicros = dividendAmountToMicros(row.amount);
+      const exDate = String(row.exOrEffDate ?? "").trim();
+      const paymentDate = String(row.paymentDate ?? "").trim();
+      if (
+        row.type !== "Cash" ||
+        (row.currency && row.currency !== "USD") ||
+        !amountPerShareMicros ||
+        easternTimestampForUsDate(exDate) === null ||
+        easternTimestampForUsDate(paymentDate) === null
+      ) {
+        return null;
+      }
+      return { exDate, paymentDate, amountPerShareMicros };
+    })
+    .filter((event): event is DividendEvent => Boolean(event));
+}
+
+async function fetchNasdaqDividends(symbol: string) {
+  for (const assetClass of ["stocks", "etf"]) {
+    const response = await fetch(
+      `${NASDAQ_QUOTE_URL}/${encodeURIComponent(symbol)}/dividends?assetclass=${assetClass}`,
+      {
+        cache: "no-store",
+        signal: AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS),
+        headers: {
+          Accept: "application/json, text/plain, */*",
+          "Accept-Language": "en-US,en;q=0.9",
+          "User-Agent": "Mozilla/5.0 TickerQuest/1.0",
+        },
+      },
+    );
+    if (!response.ok) continue;
+    const payload = (await response.json()) as NasdaqDividendResponse;
+    if (payload.status?.rCode === 200) {
+      const events = dividendEventsFromPayload(payload);
+      if (events.length || assetClass === "etf") return events;
+    }
+  }
+  throw new Error(`Nasdaq did not return dividend data for ${symbol}.`);
+}
+
+async function cachedDividendEvents(
+  db: D1Database,
+  symbols: string[],
+) {
+  if (!symbols.length) return [];
+  const placeholders = symbols.map(() => "?").join(", ");
+  const rows = await db
+    .prepare(
+      `SELECT symbol, payload_json, fetched_at
+       FROM dividend_event_cache
+       WHERE symbol IN (${placeholders})`,
+    )
+    .bind(...symbols)
+    .all<DividendCacheRow>();
+  return rows.results.map((row) => {
+    let events: DividendEvent[] = [];
+    try {
+      events = JSON.parse(row.payload_json) as DividendEvent[];
+    } catch {
+      events = [];
+    }
+    return { symbol: row.symbol, fetchedAt: row.fetched_at, events };
+  });
+}
+
+function refreshDividendsInBackground(
+  db: D1Database,
+  symbols: string[],
+  cached: Array<{ symbol: string; fetchedAt: number }>,
+) {
+  const context = getRequestExecutionContext();
+  if (!context) return;
+  const freshness = new Map(
+    cached.map((item) => [item.symbol, item.fetchedAt]),
+  );
+  const pendingSymbols = symbols.filter(
+    (symbol) =>
+      !dividendRefreshesInFlight.has(symbol) &&
+      Number(freshness.get(symbol) ?? 0) + DIVIDEND_CACHE_TTL_MS <= Date.now(),
+  );
+  if (!pendingSymbols.length) return;
+  pendingSymbols.forEach((symbol) => dividendRefreshesInFlight.add(symbol));
+  const refresh = Promise.allSettled(
+    pendingSymbols.map(async (symbol) => {
+      const events = await fetchNasdaqDividends(symbol);
+      await db
+        .prepare(
+          `INSERT INTO dividend_event_cache (symbol, payload_json, fetched_at)
+           VALUES (?, ?, ?)
+           ON CONFLICT(symbol) DO UPDATE SET
+             payload_json = excluded.payload_json,
+             fetched_at = excluded.fetched_at`,
+        )
+        .bind(symbol, JSON.stringify(events), Date.now())
+        .run();
+    }),
+  ).then(() => {
+    pendingSymbols.forEach((symbol) => dividendRefreshesInFlight.delete(symbol));
+  });
+  context.waitUntil(refresh);
+}
+
+async function settleDividends(db: D1Database, game: GameRow) {
+  if (
+    !game.dividends_enabled_at ||
+    !game.started_at ||
+    game.status === "lobby"
+  ) {
+    return;
+  }
+  const symbolRows = await db
+    .prepare("SELECT DISTINCT symbol FROM trades WHERE game_id = ?")
+    .bind(game.id)
+    .all<{ symbol: string }>();
+  const symbols = symbolRows.results.map((row) => row.symbol);
+  if (!symbols.length) return;
+
+  const cached = await cachedDividendEvents(db, symbols);
+  refreshDividendsInBackground(db, symbols, cached);
+  if (!cached.length) return;
+
+  const now = Date.now();
+  const payable = cached
+    .map((item) => ({
+      ...item,
+      events: item.events.filter((event) => {
+        const exAt = easternTimestampForUsDate(event.exDate);
+        const paymentAt = easternTimestampForUsDate(event.paymentDate);
+        return (
+          exAt !== null &&
+          paymentAt !== null &&
+          exAt >= game.dividends_enabled_at! &&
+          exAt >= game.started_at! &&
+          paymentAt <= now &&
+          (!game.ended_at || paymentAt <= game.ended_at)
+        );
+      }),
+    }))
+    .filter((item) => item.events.length);
+  if (!payable.length) return;
+
+  const [joinedSeats, settledRows] = await Promise.all([
+    db
+      .prepare(
+        `SELECT * FROM seats
+         WHERE game_id = ? AND player_name IS NOT NULL`,
+      )
+      .bind(game.id)
+      .all<SeatRow>(),
+    db
+      .prepare(
+        `SELECT seat_id, symbol, ex_date, payment_date
+         FROM dividend_payments
+         WHERE game_id = ? AND credited_at IS NOT NULL`,
+      )
+      .bind(game.id)
+      .all<{
+        seat_id: string;
+        symbol: string;
+        ex_date: string;
+        payment_date: string;
+      }>(),
+  ]);
+  const settledKeys = new Set(
+    settledRows.results.map(
+      (row) =>
+        `${row.seat_id}:${row.symbol}:${row.ex_date}:${row.payment_date}`,
+    ),
+  );
+  const hasOutstandingPayment = payable.some((item) =>
+    item.events.some((event) =>
+      joinedSeats.results.some(
+        (seat) =>
+          !settledKeys.has(
+            `${seat.id}:${item.symbol}:${event.exDate}:${event.paymentDate}`,
+          ),
+      ),
+    ),
+  );
+  if (!hasOutstandingPayment) return;
+  const tradeRows = await db
+    .prepare(
+      `SELECT seat_id, symbol, side, shares_micros, created_at
+       FROM trades
+       WHERE game_id = ?
+       ORDER BY created_at`,
+    )
+    .bind(game.id)
+    .all<DividendTradeRow>();
+
+  for (const item of payable) {
+    for (const event of item.events) {
+      const exAt = easternTimestampForUsDate(event.exDate)!;
+      for (const seat of joinedSeats.results) {
+        const paymentKey = `${seat.id}:${item.symbol}:${event.exDate}:${event.paymentDate}`;
+        if (settledKeys.has(paymentKey)) continue;
+        const eligibleTrades = tradeRows.results.filter(
+          (tradeRow) =>
+            tradeRow.seat_id === seat.id &&
+            tradeRow.symbol === item.symbol,
+        );
+        const eligibleSharesMicros = sharesHeldMicrosAt(
+          eligibleTrades,
+          exAt,
+        );
+        const gross = dividendGrossCents(
+          eligibleSharesMicros,
+          event.amountPerShareMicros,
+        );
+        const tax = Math.max(
+          0,
+          Math.round((gross * game.tax_rate_bps) / 10_000),
+        );
+        const paymentId = await tokenHash(
+          `dividend:${game.id}:${seat.id}:${item.symbol}:${event.exDate}:${event.paymentDate}`,
+        );
+        await db
+          .prepare(
+            `INSERT INTO dividend_payments (
+              id, game_id, seat_id, symbol, ex_date, payment_date,
+              shares_micros, amount_per_share_micros, gross_cents,
+              tax_cents, credited_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+            ON CONFLICT(game_id, seat_id, symbol, ex_date, payment_date)
+            DO NOTHING`,
+          )
+          .bind(
+            paymentId,
+            game.id,
+            seat.id,
+            item.symbol,
+            event.exDate,
+            event.paymentDate,
+            eligibleSharesMicros,
+            event.amountPerShareMicros,
+            gross,
+            tax,
+          )
+          .run();
+        const credited = await db.batch([
+          db
+            .prepare(
+              `UPDATE seats
+               SET cash_cents = cash_cents + ?,
+                   dividend_income_cents = dividend_income_cents + ?,
+                   dividend_tax_cents = dividend_tax_cents + ?,
+                   tax_reserve_cents = tax_reserve_cents + ?
+               WHERE id = ?
+                 AND EXISTS (
+                   SELECT 1 FROM dividend_payments
+                   WHERE id = ? AND credited_at IS NULL
+                 )`,
+            )
+            .bind(gross, gross, tax, tax, seat.id, paymentId),
+          db
+            .prepare(
+              `UPDATE dividend_payments
+               SET credited_at = ?
+               WHERE id = ? AND credited_at IS NULL`,
+            )
+            .bind(now, paymentId),
+        ]);
+        if (credited[1].meta.changes) settledKeys.add(paymentKey);
+      }
+    }
+  }
 }
 
 async function resolveQuote(
@@ -1025,8 +1351,8 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
         `INSERT INTO games (
           id, name, host_token_hash, status, starting_cash_cents,
           tax_rate_bps, duration_days, target_value_cents,
-          period_bonuses_enabled, created_at
-        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?, 1, ?)`,
+          period_bonuses_enabled, dividends_enabled_at, created_at
+        ) VALUES (?, ?, ?, 'lobby', ?, ?, ?, ?, 1, ?, ?)`,
       )
       .bind(
         gameId,
@@ -1036,6 +1362,7 @@ async function createGame(request: Request, payload: Record<string, unknown>) {
         TAX_RATE_BPS,
         durationDays,
         targetValueCents,
+        createdAt,
         createdAt,
       ),
   ];
@@ -1098,6 +1425,8 @@ async function health(request: Request) {
         weekCents: PERIOD_BONUSES_CENTS.week,
         monthCents: PERIOD_BONUSES_CENTS.month,
       },
+      dividends: true,
+      hostSeatLinks: true,
     },
   });
 }
@@ -1192,6 +1521,7 @@ async function resetSeat(request: Request, payload: Record<string, unknown>) {
       `UPDATE seats
        SET invite_token_hash = ?, player_name = NULL, joined_at = NULL,
            cash_cents = ?, bonus_cents = 0, realized_net_cents = 0,
+           dividend_income_cents = 0, dividend_tax_cents = 0,
            tax_reserve_cents = 0
        WHERE game_id = ? AND seat_number = ?`,
     )
@@ -1201,6 +1531,33 @@ async function resetSeat(request: Request, payload: Record<string, unknown>) {
       gameId,
       seatNumber,
     )
+    .run();
+  if (!result.meta.changes) throw new HttpError(404, "Seat not found.");
+  return json(request, { gameId, seatNumber, token });
+}
+
+async function replaceSeatLink(
+  request: Request,
+  payload: Record<string, unknown>,
+) {
+  const db = getD1();
+  const gameId = String(payload.gameId ?? "");
+  const game = await requireHost(db, gameId, bearerToken(request));
+  if (game.status === "ended") {
+    throw new HttpError(409, "Player links cannot be changed after the game ends.");
+  }
+  const seatNumber = Number(payload.seatNumber);
+  if (!Number.isInteger(seatNumber) || seatNumber < 1 || seatNumber > MAX_SEATS) {
+    throw new HttpError(400, "Choose a valid seat.");
+  }
+  const token = randomToken();
+  const result = await db
+    .prepare(
+      `UPDATE seats
+       SET invite_token_hash = ?
+       WHERE game_id = ? AND seat_number = ?`,
+    )
+    .bind(await tokenHash(token), gameId, seatNumber)
     .run();
   if (!result.meta.changes) throw new HttpError(404, "Seat not found.");
   return json(request, { gameId, seatNumber, token });
@@ -1229,8 +1586,9 @@ async function buyStock(
     .all<WashLossRow>();
   const wash = applyPendingWashLosses(washRows.results, sharesMicros);
   const newRealizedNet = seat.realized_net_cents + wash.deferredLossCents;
-  const newTaxReserve = taxReserveCents(
+  const newTaxReserve = totalTaxReserveCents(
     newRealizedNet,
+    seat.dividend_tax_cents,
     game.tax_rate_bps,
   );
   const taxDeltaCents =
@@ -1352,8 +1710,9 @@ async function sellStock(
   const now = Date.now();
   const newRealizedNet =
     seat.realized_net_cents + sale.realizedGainCents;
-  const newTaxReserve = taxReserveCents(
+  const newTaxReserve = totalTaxReserveCents(
     newRealizedNet,
+    seat.dividend_tax_cents,
     game.tax_rate_bps,
   );
   const taxDeltaCents =
@@ -1537,9 +1896,17 @@ async function gameState(request: Request) {
     game = { ...game, status: "ended", ended_at: game.ends_at };
   }
 
+  await settleDividends(db, game);
   await settlePeriodBonuses(db, game);
 
-  const [seatResult, lotResult, tradeResult, awardResult, market] =
+  const [
+    seatResult,
+    lotResult,
+    tradeResult,
+    awardResult,
+    dividendResult,
+    market,
+  ] =
     await Promise.all([
     db
       .prepare("SELECT * FROM seats WHERE game_id = ? ORDER BY seat_number")
@@ -1579,6 +1946,30 @@ async function gameState(request: Request) {
          JOIN seats ON seats.id = awards.seat_id
          WHERE awards.game_id = ? AND awards.bonus_cents > 0
          ORDER BY awards.awarded_at DESC`,
+      )
+      .bind(gameId)
+      .all<Record<string, string | number | null>>(),
+    db
+      .prepare(
+        `SELECT
+           payments.id,
+           payments.seat_id,
+           seats.player_name,
+           payments.symbol,
+           payments.ex_date,
+           payments.payment_date,
+           payments.shares_micros,
+           payments.amount_per_share_micros,
+           payments.gross_cents,
+           payments.tax_cents,
+           payments.credited_at
+         FROM dividend_payments AS payments
+         JOIN seats ON seats.id = payments.seat_id
+         WHERE payments.game_id = ?
+           AND payments.gross_cents > 0
+           AND payments.credited_at IS NOT NULL
+         ORDER BY payments.credited_at DESC
+         LIMIT 100`,
       )
       .bind(gameId)
       .all<Record<string, string | number | null>>(),
@@ -1658,6 +2049,8 @@ async function gameState(request: Request) {
         playerName: seat.player_name,
         cashCents: seat.cash_cents,
         bonusCents: seat.bonus_cents,
+        dividendIncomeCents: seat.dividend_income_cents,
+        dividendTaxCents: seat.dividend_tax_cents,
         spendableCashCents: Math.max(
           0,
           seat.cash_cents - seat.tax_reserve_cents,
@@ -1742,6 +2135,8 @@ async function gameState(request: Request) {
       targetValueCents: game.target_value_cents,
       winnerSeatId: game.winner_seat_id,
       periodBonusesEnabled: Boolean(game.period_bonuses_enabled),
+      dividendsEnabled: Boolean(game.dividends_enabled_at),
+      dividendsEnabledAt: game.dividends_enabled_at,
       taxRateBps: game.tax_rate_bps,
       createdAt: game.created_at,
       startedAt: game.started_at,
@@ -1775,6 +2170,20 @@ async function gameState(request: Request) {
       winningChangePercent:
         Number(row.winning_change_bps) / 100,
       awardedAt: Number(row.awarded_at),
+    })),
+    dividendPayments: dividendResult.results.map((row) => ({
+      id: row.id,
+      seatId: row.seat_id,
+      playerName: row.player_name,
+      symbol: row.symbol,
+      exDate: row.ex_date,
+      paymentDate: row.payment_date,
+      shares: microsToShares(Number(row.shares_micros)),
+      amountPerShare:
+        Number(row.amount_per_share_micros) / 1_000_000,
+      grossCents: Number(row.gross_cents),
+      taxCents: Number(row.tax_cents),
+      creditedAt: Number(row.credited_at),
     })),
     recentTrades: tradeResult.results.map((row) => ({
       id: row.id,
@@ -1840,6 +2249,8 @@ export async function POST(request: Request) {
         return await endGame(request, payload);
       case "resetSeat":
         return await resetSeat(request, payload);
+      case "replaceSeatLink":
+        return await replaceSeatLink(request, payload);
       case "quote":
         return await quoteStock(request, payload);
       case "trade":
