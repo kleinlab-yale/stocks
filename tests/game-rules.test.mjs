@@ -8,6 +8,7 @@ import {
   completedCompetitionPeriod,
   dividendGrossCents,
   easternTimestampForUsDate,
+  endGameConfirmationIsValid,
   grossCents,
   gameEndsAt,
   quoteTimestampIsExecutable,
@@ -19,6 +20,13 @@ import {
   totalTaxReserveCents,
   tradingIsActive,
 } from "../lib/game-rules.js";
+
+test("requires the exact destructive-action phrase before ending a game", () => {
+  assert.equal(endGameConfirmationIsValid("END GAME"), true);
+  assert.equal(endGameConfirmationIsValid(" END GAME "), true);
+  assert.equal(endGameConfirmationIsValid("end game"), false);
+  assert.equal(endGameConfirmationIsValid(""), false);
+});
 
 test("converts fractional shares and values a trade in cents", () => {
   assert.equal(sharesToMicros(2.5), 2.5 * SHARES_SCALE);

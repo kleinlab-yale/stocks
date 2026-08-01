@@ -16,7 +16,7 @@ The game creator occupies Seat 1. Seat 1's private player credential is sufficie
 - invite a new player into any open seat after the game has started;
 - reissue an unclaimed invitation or clear a lobby seat;
 - start after at least two players have joined; and
-- end the game early and lock the final standings.
+- end the game early only after typing `END GAME` and accepting a separate final confirmation, then lock the final standings.
 
 Players can enter any valid U.S.-listed stock or ETF ticker or a supported Coinbase USD crypto pair, check its newest available price, and buy or sell fractional units whenever the game is active, including nights and weekends. Bitcoin accepts `BTC`, `BTC-USD`, or `Bitcoin`; other common crypto symbols such as `ETH`, `SOL`, `XRP`, `DOGE`, and `ADA` are accepted directly and stored as explicit USD pairs. Stocks use the newest shared regular-market, pre-market, after-hours, or closing quote; crypto uses the public Coinbase Exchange 24/7 ticker. Prices, their source, and timestamps appear before execution, and a quote more than seven days old cannot execute a trade. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
 

@@ -620,8 +620,8 @@
         ${
           data.game.status === "active"
             ? `<div class="host-danger-zone">
-                <div><strong>End this game</strong><span>Locks trading and records the final standings for everyone.</span></div>
-                <button class="danger-action" type="button" data-action="end-game">End game now</button>
+                <div><strong>End this game</strong><span>Locks trading and records final standings. Requires typing END GAME and accepting a final confirmation.</span></div>
+                <button class="danger-action" type="button" data-action="end-game">End game…</button>
               </div>`
             : ""
         }
@@ -1634,9 +1634,27 @@
         await refresh();
         showToast("The market game has started.");
       } else if (action === "end-game") {
-        if (!window.confirm("End the game now and lock the final standings?")) return;
+        const typedConfirmation = window.prompt(
+          `To end “${snapshot.game.name}”, type END GAME exactly.\n\nAnything else will leave the game active.`,
+        );
+        if (String(typedConfirmation ?? "").trim().toUpperCase() !== "END GAME") {
+          showToast("Game not ended. The confirmation phrase did not match.", true);
+          return;
+        }
+        if (
+          !window.confirm(
+            `Final confirmation: end “${snapshot.game.name}” now? Trading will lock for every player.`,
+          )
+        ) {
+          showToast("Game not ended.");
+          return;
+        }
         button.disabled = true;
-        await apiRequest("POST", { action: "end", gameId });
+        await apiRequest("POST", {
+          action: "end",
+          gameId,
+          confirmation: "END GAME",
+        });
         await refresh();
         showToast("The final standings are locked.");
       } else if (action === "trade-side") {

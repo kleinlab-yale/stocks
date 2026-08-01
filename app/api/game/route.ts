@@ -7,6 +7,7 @@ import {
   completedCompetitionPeriod,
   dividendGrossCents,
   easternTimestampForUsDate,
+  endGameConfirmationIsValid,
   gameEndsAt,
   grossCents,
   microsToShares,
@@ -1535,6 +1536,7 @@ async function health(request: Request) {
       maxSeats: MAX_SEATS,
       crypto: true,
       seatOneHostAccess: true,
+      protectedEndGame: true,
     },
   });
 }
@@ -1602,6 +1604,12 @@ async function endGame(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
   await requireCreatorHost(db, gameId, request);
+  if (!endGameConfirmationIsValid(payload.confirmation)) {
+    throw new HttpError(
+      400,
+      "Type END GAME and complete the final confirmation before ending this game.",
+    );
+  }
   const endedAt = Date.now();
   await db
     .prepare(
