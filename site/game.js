@@ -55,6 +55,18 @@
       nickname: "AI",
       image: "./assets/players/daryl-ai.jpg",
     },
+    chris: {
+      nickname: "The Coder",
+      image: "./assets/players/chris-the-coder.jpg",
+    },
+    emma: {
+      nickname: "The Baddy",
+      image: "./assets/players/emma-the-baddy.jpg",
+    },
+    kayla: {
+      nickname: "The Cutie",
+      image: "./assets/players/kayla-the-cutie.jpg",
+    },
   };
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
@@ -91,7 +103,7 @@
       return PLAYER_CHARACTERS.daryl;
     }
 
-    const familyName = ["grandpa", "grandma", "cher", "henry", "may"].find((name) =>
+    const familyName = ["grandpa", "grandma", "cher", "henry", "may", "chris", "emma", "kayla"].find((name) =>
       new RegExp(`(^|[^a-z0-9])${name}([^a-z0-9]|$)`).test(normalized),
     );
     return familyName ? PLAYER_CHARACTERS[familyName] : null;
