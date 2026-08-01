@@ -312,7 +312,8 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 .identity-banner.player > small { grid-column: 2; }
 .identity-banner.player > strong { font-size: 20px; line-height: 1.08; }
 .identity-banner.player small { font-size: 9px; }
-.identity-banner.host {
+.identity-banner.host,
+.identity-banner.creator-host {
   border-color: rgba(169,156,248,.32);
   background: rgba(169,156,248,.13);
 }

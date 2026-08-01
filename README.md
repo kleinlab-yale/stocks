@@ -6,10 +6,10 @@ TickerQuest combines a free portfolio/watchlist scorecard with a private eight-p
 
 Open `game.html` from the dashboard and choose an equal starting bankroll for all eight seats. A game can run for a week, month, year, indefinitely, or until the first portfolio reaches a host-selected monetary target. The host receives eight unique private invitation links.
 
-The host can:
+The game creator occupies Seat 1. Host controls require both the host credential and Seat 1's private player credential, so another player's link can never open the Host view. The creator can:
 
 - invite up to eight players without email addresses or passwords;
-- occupy a player seat while retaining separate host controls;
+- play from Seat 1 while retaining separate creator-only host controls;
 - copy a complete private host recovery link that opens Host controls in another browser;
 - see every player name beside the private link stored on the host device;
 - resend, recover, or replace a player link without changing that live seat's cash, holdings, trades, tax, dividends, or rank;
@@ -60,7 +60,7 @@ The service source lives in the same repository:
 - `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
 - `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
 
-Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete host recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. Authorized sessions keep their complete private credential in the address bar so copying the full URL into another browser preserves the same player or host role. The Host tab also exposes that private recovery link explicitly. These complete URLs must be treated like passwords; if the host URL and every authorized host browser are both lost, the host credential cannot be reconstructed.
+Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete creator recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. Player URLs retain only that player's credential. The creator recovery URL contains both the host credential and Seat 1's player credential; the service checks both before returning or accepting Host controls. Rotating Seat 1 access invalidates every older creator recovery URL without changing the creator's portfolio. These complete URLs must be treated like passwords.
 
 ## Change the tracked tickers
 

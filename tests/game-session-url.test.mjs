@@ -42,6 +42,9 @@ function bootGame({ search, stored = {} }) {
       getItem(key) {
         return values.get(key) ?? null;
       },
+      removeItem(key) {
+        values.delete(key);
+      },
       setItem(key, value) {
         values.set(key, String(value));
       },
@@ -65,12 +68,14 @@ function bootGame({ search, stored = {} }) {
   return { replacedUrls, values };
 }
 
-test("restores the complete host credential to a bare saved-game URL", () => {
+test("restores both creator credentials to a bare saved-game URL", () => {
   const hostToken = "private-host-token";
+  const creatorToken = "seat-one-player-token";
   const { replacedUrls } = bootGame({
     search: `?game=${gameId}`,
     stored: {
       [`tickerquest:game:${gameId}:host`]: hostToken,
+      [`tickerquest:game:${gameId}:player`]: creatorToken,
       [`tickerquest:game:${gameId}:role`]: "host",
     },
   });
@@ -78,7 +83,22 @@ test("restores the complete host credential to a bare saved-game URL", () => {
 
   assert.equal(privateUrl.searchParams.get("game"), gameId);
   assert.equal(privateUrl.searchParams.get("host"), hostToken);
+  assert.equal(privateUrl.searchParams.get("creator"), creatorToken);
   assert.equal(privateUrl.searchParams.has("invite"), false);
+});
+
+test("a complete creator link saves both required credentials", () => {
+  const hostToken = "private-host-token";
+  const creatorToken = "seat-one-player-token";
+  const { replacedUrls, values } = bootGame({
+    search: `?game=${gameId}&host=${hostToken}&creator=${creatorToken}`,
+  });
+  const privateUrl = new URL(replacedUrls.at(-1));
+
+  assert.equal(privateUrl.searchParams.get("host"), hostToken);
+  assert.equal(privateUrl.searchParams.get("creator"), creatorToken);
+  assert.equal(values.get(`tickerquest:game:${gameId}:host`), hostToken);
+  assert.equal(values.get(`tickerquest:game:${gameId}:player`), creatorToken);
 });
 
 test("keeps a player invitation in the address bar and saves it for the league", () => {

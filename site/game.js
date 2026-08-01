@@ -28,6 +28,7 @@
   let trendRange = "day";
   let trendResizeTimer = null;
   let serviceCapabilities = null;
+  let creatorSeatVerified = false;
   const checkedQuotes = new Map();
   const PLAYER_CHARACTERS = {
     grandpa: {
@@ -60,6 +61,9 @@
   const getStored = (kind) => (gameId ? localStorage.getItem(storageKey(kind)) : null);
   const setStored = (kind, value) => {
     if (gameId && value) localStorage.setItem(storageKey(kind), value);
+  };
+  const removeStored = (kind) => {
+    if (gameId) localStorage.removeItem(storageKey(kind));
   };
 
   function escapeHtml(value) {
@@ -222,7 +226,9 @@
   }
 
   function updateRoleSwitch() {
-    const hasBoth = Boolean(getStored("host") && getStored("player"));
+    const hasBoth = Boolean(
+      creatorSeatVerified && getStored("host") && getStored("player"),
+    );
     roleSwitch.hidden = !hasBoth;
     if (hasBoth) {
       roleSwitch.textContent =
@@ -262,6 +268,9 @@
     };
     const token = tokenFor(role);
     if (token) headers.Authorization = `Bearer ${token}`;
+    if (role === "host" && tokenFor("player")) {
+      headers["X-Creator-Player-Token"] = tokenFor("player");
+    }
     if (body) headers["Content-Type"] = "application/json";
     const url =
       method === "GET"
@@ -437,7 +446,14 @@
     const url = new URL("./game.html", window.location.href);
     url.search = "";
     url.searchParams.set("game", gameId);
-    url.searchParams.set(role === "host" ? "host" : "invite", token);
+    if (role === "host") {
+      const creatorToken = tokenFor("player");
+      if (!creatorToken) return "";
+      url.searchParams.set("host", token);
+      url.searchParams.set("creator", creatorToken);
+    } else {
+      url.searchParams.set("invite", token);
+    }
     return url.href;
   }
 
@@ -461,7 +477,7 @@
       <div class="host-recovery">
         <div>
           <strong>Private host recovery link</strong>
-          <span>Save this complete link to open Host controls in another browser. Anyone with it can manage the league.</span>
+          <span>Creator-only link for Seat 1. Save it to open Host controls in another browser, and never send it to another player.</span>
         </div>
         <div class="invite-tools">
           <input class="invite-link" value="${escapeHtml(link)}" readonly aria-label="Private host recovery link">
@@ -495,8 +511,8 @@
             }
             <div class="seat-actions">
               ${
-                !seat.joined && token
-                  ? `<button class="secondary-action" type="button" data-action="join-seat" data-seat="${seat.seatNumber}">Join this seat</button>`
+                !seat.joined && token && seat.seatNumber === 1
+                  ? `<button class="secondary-action" type="button" data-action="join-seat" data-seat="1">Join as game creator</button>`
                   : ""
               }
               <button class="${seat.joined ? "danger-action" : "secondary-action"}" type="button" data-action="reset-seat" data-seat="${seat.seatNumber}">
@@ -523,7 +539,7 @@
       <section class="lobby-board">
         <p class="eyebrow">Host controls</p>
         <h2>${joined} of 8 players are ready.</h2>
-        <p>Copy each private link and send it to one family member. You can occupy a seat too while keeping this host view.</p>
+        <p>Seat 1 is the game creator and the only player allowed to open Host controls. Send the other private links to family members.</p>
         <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
       </section>
       ${renderHostRecoveryLink()}
@@ -561,7 +577,7 @@
             }
             <div class="seat-actions">
               <button class="secondary-action" type="button" data-action="replace-seat-link" data-seat="${seat.seatNumber}">
-                ${link ? "Replace private link" : seat.joined ? "Recover private link" : "Create invite link"}
+                ${seat.seatNumber === 1 ? "Rotate creator access" : link ? "Replace private link" : seat.joined ? "Recover private link" : "Create invite link"}
               </button>
             </div>
           </article>
@@ -572,12 +588,12 @@
       <section class="panel host-panel">
         <div class="panel-heading host-panel-heading">
           <div>
-            <p class="eyebrow">Host-only access</p>
+            <p class="eyebrow">Creator-only access</p>
             <h2>Players & private links</h2>
           </div>
-          <span class="host-lock">Host token verified</span>
+          <span class="host-lock">Seat 1 creator verified</span>
         </div>
-        <p class="host-note">Resend a player’s existing link, or invite someone into any open seat. Replacing a link never changes that seat’s cash, trades, holdings, tax, dividends, or rank—but the old link will stop working.</p>
+        <p class="host-note">Only the game creator in Seat 1 can see or use this panel. Resend a player’s existing link or invite someone into an open seat. Replacing a link never changes that seat’s portfolio—but the old link stops working.</p>
         ${renderHostRecoveryLink()}
         <div class="seat-grid host-seat-grid">${cards}</div>
         ${
@@ -1148,6 +1164,8 @@
   function renderGame(data) {
     const isPlayer = currentRole === "player";
     const you = isPlayer ? data.you : null;
+    const creatorSeat = data.seats?.find((seat) => Number(seat.seatNumber) === 1);
+    const identityPlayer = you || creatorSeat;
     const leader = data.leaderboard[0] || null;
     const featured = you || leader;
     const joined = data.leaderboard.length;
@@ -1159,11 +1177,11 @@
     );
 
     root.innerHTML = `
-      <div class="identity-banner ${you ? "player" : "host"}">
-        ${you ? renderPlayerAvatar(you.playerName, "identity-avatar") : ""}
-        <span>${you ? "Playing as" : "Private host session"}</span>
-        <strong>${you ? `${escapeHtml(you.playerName)} ${renderPlayerNickname(you.playerName)}` : "HOST CONTROLS"}</strong>
-        <small>${you ? `Seat ${you.seatNumber} · Only trades from this private link affect ${escapeHtml(you.playerName)}’s portfolio.` : "Only this verified host link can manage players or end the game. Player links never see these controls."}</small>
+      <div class="identity-banner player${you ? "" : " creator-host"}">
+        ${identityPlayer?.playerName ? renderPlayerAvatar(identityPlayer.playerName, "identity-avatar") : ""}
+        <span>${you ? "Playing as" : "Game creator & host"}</span>
+        <strong>${identityPlayer?.playerName ? `${escapeHtml(identityPlayer.playerName)} ${renderPlayerNickname(identityPlayer.playerName)}` : "Seat 1 creator"}</strong>
+        <small>${you ? `Seat ${you.seatNumber} · Only trades from this private link affect ${escapeHtml(you.playerName)}’s portfolio.` : "Creator-verified controls. Other player links cannot view or use Host controls."}</small>
       </div>
       <div class="game-topline">
         <div class="game-title">
@@ -1313,6 +1331,8 @@
     try {
       const data = await apiRequest("GET");
       snapshot = data;
+      creatorSeatVerified =
+        currentRole === "host" || Number(data.you?.seatNumber) === 1;
       updateRoleSwitch();
       if (currentRole === "player" && !data.you?.playerName) {
         renderJoin(data);
@@ -1323,6 +1343,18 @@
       }
       if (!quiet) window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (error) {
+      if (
+        currentRole === "host" &&
+        tokenFor("player") &&
+        String(error.message).includes("Only the game creator in Seat 1")
+      ) {
+        removeStored("host");
+        creatorSeatVerified = false;
+        setRole("player");
+        await refresh({ quiet });
+        showToast("Host controls are available only to the game creator in Seat 1.", true);
+        return;
+      }
       if (quiet) {
         showToast(error.message, true);
         return;
@@ -1380,6 +1412,13 @@
         );
         gameId = result.gameId;
         setStored("host", result.hostToken);
+        const creatorInvitation = result.invitations.find(
+          (item) => Number(item.seatNumber) === 1,
+        );
+        if (!creatorInvitation?.token) {
+          throw new Error("The creator seat could not be secured.");
+        }
+        setStored("player", creatorInvitation.token);
         saveInvitationTokens(
           Object.fromEntries(
             result.invitations.map((item) => [String(item.seatNumber), item.token]),
@@ -1507,16 +1546,19 @@
         const priorToken = tokens[String(seatNumber)];
         tokens[String(seatNumber)] = result.token;
         saveInvitationTokens(tokens);
-        if (priorToken && getStored("player") === priorToken) {
+        if (seatNumber === 1 || (priorToken && getStored("player") === priorToken)) {
           setStored("player", result.token);
+          syncPrivateUrl();
         }
         await refresh({ quiet: true });
         showToast(`Seat ${seatNumber} now has a new private link.`);
       } else if (action === "replace-seat-link") {
         const seatNumber = Number(button.dataset.seat);
         const seat = snapshot.seats.find((item) => item.seatNumber === seatNumber);
-        const warning = seat?.joined
-          ? `Replace ${seat.playerName}’s private link? Their old link will stop working, but their complete portfolio and game history will stay unchanged.`
+        const warning = seatNumber === 1
+          ? `Rotate the game creator’s private access? Every older creator and host recovery link will stop working, while the complete portfolio and game history stay unchanged.`
+          : seat?.joined
+            ? `Replace ${seat.playerName}’s private link? Their old link will stop working, but their complete portfolio and game history will stay unchanged.`
           : `Replace the invitation for open seat ${seatNumber}? The older invitation will stop working.`;
         if (!window.confirm(warning)) return;
         button.disabled = true;
@@ -1529,8 +1571,9 @@
         const priorToken = tokens[String(seatNumber)];
         tokens[String(seatNumber)] = result.token;
         saveInvitationTokens(tokens);
-        if (priorToken && getStored("player") === priorToken) {
+        if (seatNumber === 1 || (priorToken && getStored("player") === priorToken)) {
           setStored("player", result.token);
+          syncPrivateUrl();
         }
         await refresh({ quiet: true });
         showToast(
@@ -1612,12 +1655,14 @@
     if (!gameId) return;
     const invite = params.get("invite");
     const host = params.get("host");
-    if (invite) {
+    const creator = params.get("creator");
+    if (host) {
+      setStored("host", host);
+      if (creator) setStored("player", creator);
+      setRole("host");
+    } else if (invite) {
       setStored("player", invite);
       setRole("player");
-    } else if (host) {
-      setStored("host", host);
-      setRole("host");
     } else {
       const preferred = getStored("role");
       setRole(preferred === "host" ? "host" : "player");

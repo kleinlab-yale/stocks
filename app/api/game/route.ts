@@ -231,7 +231,7 @@ function corsHeaders(request: Request) {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Headers":
-      "Authorization, Content-Type, X-Game-Role",
+      "Authorization, Content-Type, X-Game-Role, X-Creator-Player-Token",
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Cache-Control": "no-store",
     Vary: "Origin",
@@ -267,6 +267,10 @@ function cleanSymbol(value: unknown) {
 function bearerToken(request: Request) {
   const value = request.headers.get("authorization") ?? "";
   return value.startsWith("Bearer ") ? value.slice(7).trim() : "";
+}
+
+function creatorPlayerToken(request: Request) {
+  return (request.headers.get("x-creator-player-token") ?? "").trim();
 }
 
 function randomToken() {
@@ -317,6 +321,29 @@ async function requireHost(
   const game = await gameById(db, gameId);
   if ((await tokenHash(token)) !== game.host_token_hash) {
     throw new HttpError(403, "This host link is not valid.");
+  }
+  return game;
+}
+
+async function requireCreatorHost(
+  db: D1Database,
+  gameId: string,
+  request: Request,
+) {
+  const game = await requireHost(db, gameId, bearerToken(request));
+  const playerToken = creatorPlayerToken(request);
+  if (!playerToken) {
+    throw new HttpError(
+      401,
+      "The complete game-creator link is required for Host controls.",
+    );
+  }
+  const creatorSeat = await requirePlayer(db, gameId, playerToken);
+  if (creatorSeat.seat_number !== 1) {
+    throw new HttpError(
+      403,
+      "Only the game creator in Seat 1 can use Host controls.",
+    );
   }
   return game;
 }
@@ -1466,7 +1493,7 @@ async function joinGame(request: Request, payload: Record<string, unknown>) {
 async function startGame(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
-  const game = await requireHost(db, gameId, bearerToken(request));
+  const game = await requireCreatorHost(db, gameId, request);
   if (game.status !== "lobby") {
     throw new HttpError(409, "This game has already started.");
   }
@@ -1493,7 +1520,7 @@ async function startGame(request: Request, payload: Record<string, unknown>) {
 async function endGame(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
-  await requireHost(db, gameId, bearerToken(request));
+  await requireCreatorHost(db, gameId, request);
   const endedAt = Date.now();
   await db
     .prepare(
@@ -1507,7 +1534,7 @@ async function endGame(request: Request, payload: Record<string, unknown>) {
 async function resetSeat(request: Request, payload: Record<string, unknown>) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
-  const game = await requireHost(db, gameId, bearerToken(request));
+  const game = await requireCreatorHost(db, gameId, request);
   if (game.status !== "lobby") {
     throw new HttpError(409, "Seats can only be reset before the game starts.");
   }
@@ -1542,7 +1569,7 @@ async function replaceSeatLink(
 ) {
   const db = getD1();
   const gameId = String(payload.gameId ?? "");
-  const game = await requireHost(db, gameId, bearerToken(request));
+  const game = await requireCreatorHost(db, gameId, request);
   if (game.status === "ended") {
     throw new HttpError(409, "Player links cannot be changed after the game ends.");
   }
@@ -1877,7 +1904,7 @@ async function gameState(request: Request) {
   const token = bearerToken(request);
   let game =
     role === "host"
-      ? await requireHost(db, gameId, token)
+      ? await requireCreatorHost(db, gameId, request)
       : await gameById(db, gameId);
   const currentSeat =
     role === "player" ? await requirePlayer(db, gameId, token) : null;
