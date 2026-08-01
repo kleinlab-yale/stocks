@@ -217,6 +217,7 @@
   function setRole(role) {
     currentRole = role;
     setStored("role", role);
+    if (gameId && tokenFor(role)) syncPrivateUrl();
     updateRoleSwitch();
   }
 
@@ -431,22 +432,26 @@
     `;
   }
 
-  function inviteUrl(token) {
-    const url = new URL("./game.html", window.location.href);
-    url.search = "";
-    url.searchParams.set("game", gameId);
-    url.searchParams.set("invite", token);
-    return url.href;
-  }
-
-  function hostUrl() {
-    const token = tokenFor("host");
+  function privateSessionUrl(role, token = tokenFor(role)) {
     if (!token) return "";
     const url = new URL("./game.html", window.location.href);
     url.search = "";
     url.searchParams.set("game", gameId);
-    url.searchParams.set("host", token);
+    url.searchParams.set(role === "host" ? "host" : "invite", token);
     return url.href;
+  }
+
+  function syncPrivateUrl() {
+    const link = privateSessionUrl(currentRole);
+    if (link) history.replaceState({}, "", link);
+  }
+
+  function inviteUrl(token) {
+    return privateSessionUrl("player", token);
+  }
+
+  function hostUrl() {
+    return privateSessionUrl("host");
   }
 
   function renderHostRecoveryLink() {
@@ -713,22 +718,49 @@
             <summary>
               <span class="rank-number">${player.rank}</span>
               ${renderPlayerAvatar(player.playerName, "leader-avatar")}
-              <span class="leader-name"><strong>${escapeHtml(player.playerName)} ${renderPlayerNickname(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""}</span></span>
+              <span class="leader-name"><strong>${escapeHtml(player.playerName)} ${renderPlayerNickname(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""} · Tap to view</span></span>
               <span class="leader-metric"><span>After tax</span><strong>${money(player.afterTaxCents)}</strong></span>
               <span class="leader-metric cash"><span>Cash</span><strong>${money(player.spendableCashCents)}</strong></span>
               <span class="leader-metric tax"><span>Return</span><strong class="${gainClass(player.returnPercent)}">${percent(player.returnPercent)}</strong></span>
             </summary>
-            <div class="leader-holdings">
-              ${
-                player.holdings.length
-                  ? player.holdings
-                      .map(
-                        (holding) =>
-                          `<span>${escapeHtml(holding.symbol)} · ${shares(holding.shares)} sh · ${money(holding.marketValueCents)}</span>`,
-                      )
-                      .join("")
-                  : "<span>All cash</span>"
-              }
+            <div class="leader-expanded">
+              <div class="leader-expanded-profile">
+                ${renderPlayerAvatar(player.playerName, "leader-expanded-avatar")}
+                <div>
+                  <span>Player portfolio</span>
+                  <strong>${escapeHtml(player.playerName)}</strong>
+                  <small>${money(player.afterTaxCents)} after tax · ${percent(player.returnPercent)} return</small>
+                </div>
+              </div>
+              <div class="leader-expanded-positions">
+                <div class="leader-expanded-heading">
+                  <strong>Current positions</strong>
+                  <span>${player.holdings.length ? `${player.holdings.length} holding${player.holdings.length === 1 ? "" : "s"}` : "No holdings"}</span>
+                </div>
+                <div class="leader-position-grid">
+                  ${
+                    player.holdings.length
+                      ? player.holdings
+                          .map(
+                            (holding) => `
+                              <article class="leader-position-card">
+                                <div class="leader-position-title">
+                                  <strong>${escapeHtml(holding.symbol)}</strong>
+                                  <span>${escapeHtml(holding.name)}</span>
+                                </div>
+                                <div class="leader-position-metrics">
+                                  <span>Shares<strong>${shares(holding.shares)}</strong></span>
+                                  <span>Value<strong>${money(holding.marketValueCents)}</strong></span>
+                                  <span>Gain<strong class="${gainClass(holding.unrealizedCents)}">${signedMoney(holding.unrealizedCents)}</strong></span>
+                                </div>
+                              </article>
+                            `,
+                          )
+                          .join("")
+                      : `<div class="leader-all-cash">All ${money(player.spendableCashCents)} is currently held as spendable cash.</div>`
+                  }
+                </div>
+              </div>
             </div>
           </details>
         `,
@@ -1354,10 +1386,6 @@
           ),
         );
         setRole("host");
-        const cleanUrl = new URL(window.location.href);
-        cleanUrl.search = "";
-        cleanUrl.searchParams.set("game", gameId);
-        history.replaceState({}, "", cleanUrl);
         await refresh();
         showToast("Game created. Send each private link to one player.");
       } else if (form.id === "join-game-form") {
@@ -1595,12 +1623,7 @@
       setRole(preferred === "host" ? "host" : "player");
       if (!tokenFor(currentRole) && getStored("host")) setRole("host");
     }
-    if (invite || host) {
-      const cleanUrl = new URL(window.location.href);
-      cleanUrl.search = "";
-      cleanUrl.searchParams.set("game", gameId);
-      history.replaceState({}, "", cleanUrl);
-    }
+    syncPrivateUrl();
   }
 
   capturePrivateLinks();

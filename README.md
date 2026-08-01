@@ -22,7 +22,7 @@ Players can enter any valid U.S.-listed stock or ETF ticker, check its newest av
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
-Named family players have lightweight generated character portraits in the identity banner, host seat controls, trend selectors, and leaderboard. Matching tolerates the nicknames already saved in the live league, including `AI D.A.R.Y.L.` and quoted family titles. Unknown or newly added names receive an initial-based fallback avatar.
+Named family players have lightweight generated character portraits in the identity banner, host seat controls, trend selectors, and leaderboard. The current player's portrait is prominent at the top of the game, and tapping any leaderboard row opens a larger character card with that player's current positions. Matching tolerates the nicknames already saved in the live league, including `AI D.A.R.Y.L.` and quoted family titles. Unknown or newly added names receive an initial-based fallback avatar.
 
 Cash dividends are credited automatically on the payment date using the shares held before the ex-dividend date. The game records each payment in a permanent dividend ledger and reserves 24% as game tax. Only dividends whose ex-dividend date is on or after feature activation are eligible, so enabling it for a live league never manufactures payments from older events.
 
@@ -58,7 +58,7 @@ The service source lives in the same repository:
 - `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
 - `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
 
-Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete host recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. The Host tab exposes a private recovery link for another browser; if that complete link and every authorized host browser are both lost, the host credential cannot be reconstructed.
+Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete host recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. Authorized sessions keep their complete private credential in the address bar so copying the full URL into another browser preserves the same player or host role. The Host tab also exposes that private recovery link explicitly. These complete URLs must be treated like passwords; if the host URL and every authorized host browser are both lost, the host credential cannot be reconstructed.
 
 ## Change the tracked tickers
 
