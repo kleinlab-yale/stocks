@@ -29,6 +29,32 @@
   let trendResizeTimer = null;
   let serviceCapabilities = null;
   const checkedQuotes = new Map();
+  const PLAYER_CHARACTERS = {
+    grandpa: {
+      nickname: "The Wise",
+      image: "./assets/players/grandpa-the-wise.jpg",
+    },
+    grandma: {
+      nickname: "The Queen",
+      image: "./assets/players/grandma-the-queen.jpg",
+    },
+    cher: {
+      nickname: "Golden State",
+      image: "./assets/players/cher-golden-state.jpg",
+    },
+    henry: {
+      nickname: "Merica First",
+      image: "./assets/players/henry-merica-first.jpg",
+    },
+    may: {
+      nickname: "$",
+      image: "./assets/players/may-money-mind.jpg",
+    },
+    daryl: {
+      nickname: "AI",
+      image: "./assets/players/daryl-ai.jpg",
+    },
+  };
 
   const storageKey = (kind) => `tickerquest:game:${gameId}:${kind}`;
   const getStored = (kind) => (gameId ? localStorage.getItem(storageKey(kind)) : null);
@@ -43,6 +69,27 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  function playerCharacter(playerName) {
+    return PLAYER_CHARACTERS[String(playerName ?? "").trim().toLowerCase()] ?? null;
+  }
+
+  function renderPlayerAvatar(playerName, className = "") {
+    const character = playerCharacter(playerName);
+    const classes = `player-avatar${className ? ` ${className}` : ""}`;
+    if (character) {
+      return `<img class="${classes}" src="${character.image}" alt="" loading="lazy" decoding="async">`;
+    }
+    const initial = String(playerName ?? "+").trim().charAt(0).toUpperCase() || "+";
+    return `<span class="${classes} avatar-fallback" aria-hidden="true">${escapeHtml(initial)}</span>`;
+  }
+
+  function renderPlayerNickname(playerName) {
+    const nickname = playerCharacter(playerName)?.nickname;
+    return nickname
+      ? `<em class="player-nickname">“${escapeHtml(nickname)}”</em>`
+      : "";
   }
 
   function money(cents) {
@@ -436,8 +483,14 @@
         return `
           <article class="seat-card${seat.joined ? " claimed" : ""}">
             <div class="seat-card-top">
-              <strong>Seat ${seat.seatNumber}</strong>
-              <span>${seat.joined ? escapeHtml(seat.playerName) : "Open for a new player"}</span>
+              <div class="seat-card-person">
+                ${renderPlayerAvatar(seat.playerName, "seat-avatar")}
+                <div>
+                  <strong>${seat.joined ? escapeHtml(seat.playerName) : `Seat ${seat.seatNumber}`}</strong>
+                  <span>${seat.joined ? `${renderPlayerNickname(seat.playerName)} · Seat ${seat.seatNumber}` : "Open for a new player"}</span>
+                </div>
+              </div>
+              <span class="seat-status">${seat.joined ? "Joined" : "Open"}</span>
             </div>
             ${
               link
@@ -604,7 +657,8 @@
           <details class="leaderboard-row${player.seatId === youSeat ? " you" : ""}">
             <summary>
               <span class="rank-number">${player.rank}</span>
-              <span class="leader-name"><strong>${escapeHtml(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""}</span></span>
+              ${renderPlayerAvatar(player.playerName, "leader-avatar")}
+              <span class="leader-name"><strong>${escapeHtml(player.playerName)} ${renderPlayerNickname(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""}</span></span>
               <span class="leader-metric"><span>After tax</span><strong>${money(player.afterTaxCents)}</strong></span>
               <span class="leader-metric cash"><span>Cash</span><strong>${money(player.spendableCashCents)}</strong></span>
               <span class="leader-metric tax"><span>Return</span><strong class="${gainClass(player.returnPercent)}">${percent(player.returnPercent)}</strong></span>
@@ -655,7 +709,7 @@
             data-seat="${escapeHtml(trend.seatId)}"
             aria-pressed="${trendSelection === trend.seatId}"
           >
-            <span class="trend-chip-dot" aria-hidden="true"></span>
+            ${renderPlayerAvatar(trend.playerName, "trend-avatar")}
             <span>${escapeHtml(trend.playerName)}</span>
             <strong>${percent(range.changePercent)}</strong>
           </button>
@@ -1019,8 +1073,9 @@
 
     root.innerHTML = `
       <div class="identity-banner ${you ? "player" : "host"}">
+        ${you ? renderPlayerAvatar(you.playerName, "identity-avatar") : ""}
         <span>${you ? "Playing as" : "Private host session"}</span>
-        <strong>${you ? escapeHtml(you.playerName) : "HOST CONTROLS"}</strong>
+        <strong>${you ? `${escapeHtml(you.playerName)} ${renderPlayerNickname(you.playerName)}` : "HOST CONTROLS"}</strong>
         <small>${you ? `Seat ${you.seatNumber} · Only trades from this private link affect ${escapeHtml(you.playerName)}’s portfolio.` : "Only this verified host link can manage players or end the game. Player links never see these controls."}</small>
       </div>
       <div class="game-topline">

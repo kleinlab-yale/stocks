@@ -21,6 +21,8 @@ Players can enter any valid U.S.-listed stock or ETF ticker, check its newest av
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
+Named family players have lightweight generated character portraits and nicknames in the identity banner, host seat controls, trend selectors, and leaderboard. Unknown or newly added names receive an initial-based fallback avatar.
+
 Cash dividends are credited automatically on the payment date using the shares held before the ex-dividend date. The game records each payment in a permanent dividend ledger and reserves 24% as game tax. Only dividends whose ex-dividend date is on or after feature activation are eligible, so enabling it for a live league never manufactures payments from older events.
 
 ### Game taxation
