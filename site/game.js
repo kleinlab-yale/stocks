@@ -497,7 +497,7 @@
           }
           ${
             dividendsEnabled
-              ? "<details class=\"rule-item\"><summary><strong>Dividends</strong></summary><span>Cash dividends are credited on the payment date using the shares held before the ex-dividend date. A 24% game-tax reserve is withheld. Dividends announced before this feature was enabled are not paid retroactively.</span></details>"
+              ? "<details class=\"rule-item\"><summary><strong>Dividends</strong></summary><span>Cash dividends are credited on the payment date using the shares held before the ex-dividend date. A 24% game-tax reserve is withheld. Ex-dividend dates before this feature was enabled are not paid retroactively.</span></details>"
               : ""
           }
         </div>
