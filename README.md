@@ -24,6 +24,8 @@ Player trends and growth rankings can be viewed for the day, week, month, or ful
 
 Named family players have lightweight generated character portraits in the identity banner, host seat controls, trend selectors, and leaderboard. The current player's portrait is prominent at the top of the game, and tapping any leaderboard row opens a larger character card with that player's current positions. Matching tolerates the nicknames already saved in the live league, including `AI D.A.R.Y.L.` and quoted family titles. Unknown or newly added names receive an initial-based fallback avatar.
 
+Shared TickerQuest links use a 1200×630 social preview featuring the six family characters, the live game's dark-green visual identity, and bankroll-neutral game copy so the card stays accurate for leagues with any starting amount.
+
 Cash dividends are credited automatically on the payment date using the shares held before the ex-dividend date. The game records each payment in a permanent dividend ledger and reserves 24% as game tax. Only dividends whose ex-dividend date is on or after feature activation are eligible, so enabling it for a live league never manufactures payments from older events.
 
 ### Game taxation
