@@ -309,12 +309,12 @@
         <div class="gateway-hero">
           <div>
             <p class="eyebrow">Private family portfolio league</p>
-            <h1>Eight seats.<br>One champion.</h1>
+            <h1>Ten seats.<br>One champion.</h1>
             <p>Give everyone the same starting bankroll, trade real market prices, and race for a week, month, year, forever, or to a winning portfolio value.</p>
           </div>
           <div class="gateway-rules">
             <span><strong>${configurableStartingCash ? "Your amount" : "$10,000"}</strong><small>Equal simulated starting cash</small></span>
-            <span><strong>8 seats</strong><small>One private link per player</small></span>
+            <span><strong>10 seats</strong><small>One private link per player</small></span>
             <span><strong>24% tax</strong><small>Reserved on net realized gains</small></span>
             <span><strong>After tax</strong><small>Determines the leaderboard</small></span>
           </div>
@@ -322,7 +322,7 @@
         <div class="gateway-card">
           <p class="eyebrow">Host a game</p>
           <h2>Make the family league.</h2>
-          <p>No accounts or passwords. You will receive eight private invitation links to text to family members.</p>
+          <p>No accounts or passwords. You will receive ten private invitation links to text to family members.</p>
           <form class="game-form" id="create-game-form">
             <label class="game-field">
               <span>Game name</span>
@@ -354,7 +354,7 @@
                   </label>`
                 : ""
             }
-            <button class="primary-action mint" type="submit">Create eight-seat game</button>
+            <button class="primary-action mint" type="submit">Create ten-seat game</button>
             <p class="form-status"></p>
           </form>
           <p class="fine-print">This is a private educational simulation. Prices can be delayed, and the tax rules are simplified game mechanics—not financial or tax advice.</p>
@@ -424,8 +424,9 @@
 
   function renderPlayerLobby(data) {
     const joined = data.seats.filter((seat) => seat.joined).length;
-    const width = Math.round((joined / 8) * 100);
-    setSession(`${joined} of 8 joined`, false);
+    const seatCount = data.seats.length || 10;
+    const width = Math.round((joined / seatCount) * 100);
+    setSession(`${joined} of ${seatCount} joined`, false);
     root.innerHTML = `
       <section class="join-wrap">
         <div class="join-card">
@@ -434,7 +435,7 @@
           <h1>You’re in, ${escapeHtml(data.you.playerName)}.</h1>
           <p>The host will start the game after at least one more family member joins. Format: ${gameLength(data.game).toLowerCase()}.</p>
           <div class="lobby-progress"><span style="width:${width}%"></span></div>
-          <p class="fine-print">${joined} of 8 seats claimed · This page refreshes automatically</p>
+          <p class="fine-print">${joined} of ${seatCount} seats claimed · This page refreshes automatically</p>
           <button class="secondary-action" type="button" data-action="refresh" style="width:100%;margin-top:16px">Check the lobby</button>
         </div>
       </section>
@@ -490,7 +491,8 @@
   function renderHostLobby(data) {
     const joined = data.seats.filter((seat) => seat.joined).length;
     const tokens = invitationTokens();
-    setSession(`${joined} of 8 joined`, false);
+    const seatCount = data.seats.length || 10;
+    setSession(`${joined} of ${seatCount} joined`, false);
     const cards = data.seats
       .map((seat) => {
         const token = tokens[String(seat.seatNumber)];
@@ -538,10 +540,15 @@
       </div>
       <section class="lobby-board">
         <p class="eyebrow">Host controls</p>
-        <h2>${joined} of 8 players are ready.</h2>
+        <h2>${joined} of ${seatCount} players are ready.</h2>
         <p>Seat 1 is the game creator and the only player allowed to open Host controls. Send the other private links to family members.</p>
-        <div class="lobby-progress"><span style="width:${Math.round((joined / 8) * 100)}%"></span></div>
+        <div class="lobby-progress"><span style="width:${Math.round((joined / seatCount) * 100)}%"></span></div>
       </section>
+      ${
+        data.seats.length < 10
+          ? `<button class="primary-action mint" type="button" data-action="expand-seats" style="margin-bottom:16px">Add two player spots</button>`
+          : ""
+      }
       ${renderHostRecoveryLink()}
       <section class="seat-grid">${cards}</section>
       ${renderRules(data.game.periodBonusesEnabled === true, data.game.dividendsEnabled === true)}
@@ -594,6 +601,11 @@
           <span class="host-lock">Seat 1 creator verified</span>
         </div>
         <p class="host-note">Only the game creator in Seat 1 can see or use this panel. Resend a player’s existing link or invite someone into an open seat. Replacing a link never changes that seat’s portfolio—but the old link stops working.</p>
+        ${
+          data.seats.length < 10
+            ? `<button class="primary-action mint" type="button" data-action="expand-seats">Add two player spots</button>`
+            : ""
+        }
         ${renderHostRecoveryLink()}
         <div class="seat-grid host-seat-grid">${cards}</div>
         ${
@@ -618,7 +630,8 @@
           <details class="rule-item"><summary><strong>After-tax value</strong></summary><span>Cash + current holdings − reserved tax. This determines rank.</span></details>
           <details class="rule-item"><summary><strong>Tax reserve</strong></summary><span>24% of cumulative net realized gains, plus the game tax tracked on dividend income. A losing sale adds no capital-gains tax and can release tax reserved from earlier gains. Reserved cash cannot fund a new purchase.</span></details>
           <details class="rule-item"><summary><strong>FIFO basis</strong></summary><span>When shares are sold, the oldest purchase lots are treated as sold first.</span></details>
-          <details class="rule-item"><summary><strong>Wash sales</strong></summary><span>A loss followed by a repurchase of the same ticker within 30 days is deferred into the new lot’s cost basis.</span></details>
+          <details class="rule-item"><summary><strong>Wash sales</strong></summary><span>A loss followed by a repurchase of the same stock or crypto pair within 30 days is deferred into the new lot’s cost basis.</span></details>
+          <details class="rule-item"><summary><strong>Crypto quotes</strong></summary><span>BTC, ETH, and other supported coins use Coinbase Exchange USD prices 24 hours a day, seven days a week. Fractional holdings use up to six decimal places. Tokens priced below half a cent are unavailable because game prices are recorded to the nearest cent.</span></details>
           ${
             bonusEnabled
               ? "<details class=\"rule-item\"><summary><strong>Period bonuses</strong></summary><span>Completed New York-time periods award $100 daily, $1,000 weekly, and $10,000 monthly. Bonuses become spendable game cash and remain in the lifetime Bonus bank. Tied periods pay no bonus.</span></details>"
@@ -626,7 +639,7 @@
           }
           ${
             dividendsEnabled
-              ? "<details class=\"rule-item\"><summary><strong>Dividends</strong></summary><span>Cash dividends are credited on the payment date using the shares held before the ex-dividend date. A 24% game-tax reserve is withheld. Ex-dividend dates before this feature was enabled are not paid retroactively.</span></details>"
+              ? "<details class=\"rule-item\"><summary><strong>Dividends</strong></summary><span>Eligible stock and ETF cash dividends are credited on the payment date using the shares held before the ex-dividend date. Crypto positions do not enter dividend processing. A 24% game-tax reserve is withheld. Ex-dividend dates before this feature was enabled are not paid retroactively.</span></details>"
               : ""
           }
         </div>
@@ -664,15 +677,25 @@
   function renderTradePanel(data) {
     const canTrade =
       data.game.status === "active" &&
-      data.market.canTrade &&
       currentRole === "player";
-    const symbolOptions = data.market.symbols
+    const marketOptions = data.market.symbols
       .filter((quote) => quote.priceCents)
       .map(
         (quote) =>
           `<option value="${escapeHtml(quote.symbol)}">${escapeHtml(quote.name)}</option>`,
       )
       .join("");
+    const cryptoOptions = [
+      ["BTC-USD", "Bitcoin"],
+      ["ETH-USD", "Ethereum"],
+      ["SOL-USD", "Solana"],
+      ["XRP-USD", "XRP"],
+      ["DOGE-USD", "Dogecoin"],
+      ["ADA-USD", "Cardano"],
+    ]
+      .map(([symbol, name]) => `<option value="${symbol}">${name} · Crypto 24/7</option>`)
+      .join("");
+    const symbolOptions = `${marketOptions}${cryptoOptions}`;
     if (!tradeSymbol) {
       tradeSymbol =
         data.you?.holdings?.[0]?.symbol ??
@@ -692,15 +715,15 @@
                   <button class="${tradeSide === "sell" ? "active" : ""}" type="button" data-action="trade-side" data-side="sell">Sell</button>
                 </div>
                 <label class="game-field">
-                  <span>Any U.S. stock or ETF ticker</span>
+                  <span>Any U.S. stock, ETF, or supported crypto</span>
                   <div class="ticker-entry">
-                    <input name="symbol" list="game-ticker-options" maxlength="10" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAPL" value="${escapeHtml(tradeSymbol)}" required>
+                    <input name="symbol" list="game-ticker-options" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAPL or BTC" value="${escapeHtml(tradeSymbol)}" required>
                     <button class="secondary-action" type="button" data-action="get-quote">Check price</button>
                   </div>
                   <datalist id="game-ticker-options">${symbolOptions}</datalist>
                 </label>
                 <label class="game-field"><span>Shares</span><input name="shares" type="number" min="0.000001" step="0.000001" inputmode="decimal" placeholder="0" required></label>
-                <div class="market-closed" data-quote-context>Enter any ticker, then check its newest available price.</div>
+                <div class="market-closed" data-quote-context>Enter a stock ticker or crypto symbol such as BTC, then check its live price.</div>
                 <div class="trade-quote"><span>Latest available quote</span><strong data-trade-price>—</strong></div>
                 <div class="trade-summary">
                   <span>Estimated value<strong data-trade-value>$0.00</strong></span>
@@ -1169,7 +1192,7 @@
     const leader = data.leaderboard[0] || null;
     const featured = you || leader;
     const joined = data.leaderboard.length;
-    const canSell = Boolean(isPlayer && data.market.canTrade && data.game.status === "active");
+    const canSell = Boolean(isPlayer && data.game.status === "active");
     const stateClass = data.game.status === "active" ? "active" : data.game.status === "ended" ? "ended" : "";
     setSession(
       data.market.sessionLabel,
@@ -1207,7 +1230,7 @@
         <div class="game-board-cell game-board-metric tax">
           <span>${you ? "Tax reserve" : "Players"}</span>
           <strong>${you ? money(you.taxReserveCents) : joined}</strong>
-          <small>${you ? "Capital gains + dividend tax" : "Up to eight family members"}</small>
+          <small>${you ? "Capital gains + dividend tax" : "Up to ten family members"}</small>
         </div>
         <div class="game-board-cell game-board-metric rank">
           <span>${you ? "Your rank" : "Time left"}</span>
@@ -1277,7 +1300,7 @@
       : "Check price";
     form.querySelector("[data-quote-context]").textContent = quote
       ? `${quote.name ?? symbol} · ${quote.source ?? snapshot.market.sessionLabel} · ${dateTime(quote.generatedAt ?? snapshot.market.generatedAt)}`
-      : "Enter any U.S.-listed stock or ETF ticker, then check its newest available price.";
+      : "Enter a U.S.-listed stock or ETF ticker, or a crypto symbol such as BTC or ETH. Crypto trades use 24/7 USD prices.";
     form.querySelector("[data-trade-value]").textContent =
       quote?.priceCents && quantity > 0
         ? money(Math.round(quote.priceCents * quantity))
@@ -1393,7 +1416,7 @@
     if (button) button.disabled = true;
     try {
       if (form.id === "create-game-form") {
-        setFormStatus(form, "Creating eight private seats…");
+        setFormStatus(form, "Creating ten private seats…");
         const values = new FormData(form);
         const endCondition = String(values.get("endCondition") ?? "30");
         const result = await apiRequest(
@@ -1578,6 +1601,23 @@
         await refresh({ quiet: true });
         showToast(
           `${seat?.playerName || `Seat ${seatNumber}`} now has a new private link. The portfolio was not changed.`,
+        );
+      } else if (action === "expand-seats") {
+        button.disabled = true;
+        const result = await apiRequest("POST", {
+          action: "expandSeats",
+          gameId,
+        });
+        const tokens = invitationTokens();
+        result.invitations.forEach((invitation) => {
+          tokens[String(invitation.seatNumber)] = invitation.token;
+        });
+        saveInvitationTokens(tokens);
+        await refresh({ quiet: true });
+        showToast(
+          result.invitations.length
+            ? `${result.invitations.length} new player invitations are ready. Existing players were not changed.`
+            : "This game already has ten player spots.",
         );
       } else if (action === "start-game") {
         button.disabled = true;

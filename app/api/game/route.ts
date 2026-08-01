@@ -18,12 +18,19 @@ import {
   totalTaxReserveCents,
   tradingIsActive,
 } from "@/lib/game-rules.js";
+import {
+  cryptoBaseSymbol,
+  cryptoDisplayName,
+  isCryptoPair,
+  normalizeTradableSymbol,
+} from "@/lib/tradable-symbols.js";
 
 export const dynamic = "force-dynamic";
 
 const MARKET_URL =
   "https://kleinlab-yale.github.io/stocks/data/market.json";
 const NASDAQ_QUOTE_URL = "https://api.nasdaq.com/api/quote";
+const COINBASE_PRODUCTS_URL = "https://api.exchange.coinbase.com/products";
 const STATIC_ORIGIN = "https://kleinlab-yale.github.io";
 const ALLOWED_ORIGINS = new Set([
   STATIC_ORIGIN,
@@ -35,7 +42,7 @@ const MIN_STARTING_CASH_CENTS = 10_000;
 const MAX_STARTING_CASH_CENTS = 10_000_000_000;
 const MAX_TARGET_VALUE_CENTS = 100_000_000_000;
 const TAX_RATE_BPS = 2_400;
-const MAX_SEATS = 8;
+const MAX_SEATS = 10;
 const WASH_WINDOW_MS = 30 * 24 * 60 * 60 * 1_000;
 const MAX_EXECUTION_QUOTE_AGE_MS = 7 * 24 * 60 * 60 * 1_000;
 const QUOTE_MEMORY_TTL_MS = 60 * 1_000;
@@ -183,6 +190,19 @@ type NasdaqDividendResponse = {
   status?: { rCode?: number };
 };
 
+type CoinbaseProductResponse = {
+  id?: string;
+  base_currency?: string;
+  quote_currency?: string;
+  status?: string;
+  trading_disabled?: boolean;
+};
+
+type CoinbaseTickerResponse = {
+  price?: string;
+  time?: string;
+};
+
 type DividendEvent = {
   exDate: string;
   paymentDate: string;
@@ -258,7 +278,7 @@ function cleanSymbol(value: unknown) {
   const symbol = String(value ?? "")
     .trim()
     .toUpperCase();
-  if (!/^[A-Z][A-Z0-9.-]{0,9}$/.test(symbol)) {
+  if (!/^[A-Z][A-Z0-9.-]{0,13}$/.test(symbol)) {
     throw new HttpError(400, "Enter a valid ticker.");
   }
   return symbol;
@@ -513,6 +533,63 @@ async function fetchNasdaqInfo(
   };
 }
 
+async function fetchCoinbaseCryptoQuote(
+  symbol: string,
+): Promise<ResolvedQuote | null> {
+  if (!isCryptoPair(symbol)) return null;
+  const encodedSymbol = encodeURIComponent(symbol);
+  const requestOptions = {
+    cache: "no-store" as const,
+    signal: AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS),
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "TickerQuest/1.0",
+    },
+  };
+  const [productResponse, tickerResponse] = await Promise.all([
+    fetch(`${COINBASE_PRODUCTS_URL}/${encodedSymbol}`, requestOptions),
+    fetch(`${COINBASE_PRODUCTS_URL}/${encodedSymbol}/ticker`, requestOptions),
+  ]);
+  if (productResponse.status === 404 || tickerResponse.status === 404) {
+    return null;
+  }
+  if (!productResponse.ok || !tickerResponse.ok) {
+    throw new Error("Coinbase crypto quote request failed.");
+  }
+  const product = (await productResponse.json()) as CoinbaseProductResponse;
+  const ticker = (await tickerResponse.json()) as CoinbaseTickerResponse;
+  const base = cryptoBaseSymbol(symbol);
+  const price = Number(ticker.price);
+  if (
+    product.id !== symbol ||
+    product.base_currency !== base ||
+    product.quote_currency !== "USD" ||
+    product.status !== "online" ||
+    product.trading_disabled ||
+    !Number.isFinite(price) ||
+    price <= 0
+  ) {
+    return null;
+  }
+  if (price < 0.005) {
+    throw new HttpError(
+      422,
+      `${symbol} trades below TickerQuest's one-cent price precision and is not available yet.`,
+    );
+  }
+  const quotedAt = Date.parse(String(ticker.time ?? ""));
+  return {
+    symbol,
+    name: cryptoDisplayName(symbol),
+    priceCents: Math.round(price * 100),
+    previousCloseCents: null,
+    generatedAt: new Date(
+      Number.isFinite(quotedAt) ? quotedAt : Date.now(),
+    ).toISOString(),
+    source: "Coinbase Exchange · Crypto 24/7",
+  };
+}
+
 function dividendAmountToMicros(value: unknown) {
   const amount = Number(
     String(value ?? "")
@@ -642,7 +719,9 @@ async function settleDividends(db: D1Database, game: GameRow) {
     .prepare("SELECT DISTINCT symbol FROM trades WHERE game_id = ?")
     .bind(game.id)
     .all<{ symbol: string }>();
-  const symbols = symbolRows.results.map((row) => row.symbol);
+  const symbols = symbolRows.results
+    .map((row) => row.symbol)
+    .filter((symbol) => !isCryptoPair(symbol));
   if (!symbols.length) return;
 
   const cached = await cachedDividendEvents(db, symbols);
@@ -819,13 +898,14 @@ async function resolveQuote(
   }
 
   try {
-    const quote =
-      (await fetchNasdaqInfo(symbol, "stocks")) ??
-      (await fetchNasdaqInfo(symbol, "etf"));
+    const quote = isCryptoPair(symbol)
+      ? await fetchCoinbaseCryptoQuote(symbol)
+      : (await fetchNasdaqInfo(symbol, "stocks")) ??
+        (await fetchNasdaqInfo(symbol, "etf"));
     if (!quote) {
       throw new HttpError(
         404,
-        `${symbol} was not found as a U.S.-listed stock or ETF.`,
+        `${symbol} was not found as a supported stock, ETF, or USD crypto pair.`,
       );
     }
     await db
@@ -1454,6 +1534,8 @@ async function health(request: Request) {
       },
       dividends: true,
       hostSeatLinks: true,
+      maxSeats: MAX_SEATS,
+      crypto: true,
     },
   });
 }
@@ -1529,6 +1611,51 @@ async function endGame(request: Request, payload: Record<string, unknown>) {
     .bind(endedAt, gameId)
     .run();
   return json(request, { gameId, status: "ended", endedAt });
+}
+
+async function expandSeats(request: Request, payload: Record<string, unknown>) {
+  const db = getD1();
+  const gameId = String(payload.gameId ?? "");
+  const game = await requireCreatorHost(db, gameId, request);
+  if (game.status === "ended") {
+    throw new HttpError(409, "Players cannot be added after the game ends.");
+  }
+  const existingRows = await db
+    .prepare("SELECT seat_number FROM seats WHERE game_id = ?")
+    .bind(gameId)
+    .all<{ seat_number: number }>();
+  const existing = new Set(
+    existingRows.results.map((row) => Number(row.seat_number)),
+  );
+  const invitations: Array<{ seatNumber: number; token: string }> = [];
+  const statements: D1PreparedStatement[] = [];
+  for (let seatNumber = 1; seatNumber <= MAX_SEATS; seatNumber += 1) {
+    if (existing.has(seatNumber)) continue;
+    const token = randomToken();
+    invitations.push({ seatNumber, token });
+    statements.push(
+      db
+        .prepare(
+          `INSERT INTO seats (
+            id, game_id, seat_number, invite_token_hash, cash_cents,
+            realized_net_cents, tax_reserve_cents
+          ) VALUES (?, ?, ?, ?, ?, 0, 0)`,
+        )
+        .bind(
+          crypto.randomUUID(),
+          gameId,
+          seatNumber,
+          await tokenHash(token),
+          game.starting_cash_cents,
+        ),
+    );
+  }
+  if (statements.length) await db.batch(statements);
+  return json(request, {
+    gameId,
+    invitations,
+    maxSeats: MAX_SEATS,
+  });
 }
 
 async function resetSeat(request: Request, payload: Record<string, unknown>) {
@@ -1848,13 +1975,15 @@ async function quoteStock(
   if (!seat.player_name) {
     throw new HttpError(409, "Claim your player seat before checking prices.");
   }
-  const symbol = cleanSymbol(payload.symbol);
-  const snapshot = await fetchMarket();
+  const symbol = normalizeTradableSymbol(cleanSymbol(payload.symbol));
+  const snapshot = isCryptoPair(symbol) ? undefined : await fetchMarket();
   const quote = await resolveQuote(db, symbol, snapshot);
   return json(request, {
     quote: {
       ...quote,
-      sessionLabel: snapshot.session?.label ?? "Latest available",
+      sessionLabel: isCryptoPair(quote.symbol)
+        ? "Crypto market · 24/7"
+        : snapshot?.session?.label ?? "Latest available",
     },
   });
 }
@@ -1870,14 +1999,17 @@ async function trade(request: Request, payload: Record<string, unknown>) {
   if (!tradingIsActive(game.status, game.ends_at)) {
     throw new HttpError(409, "Trading is not active for this game.");
   }
-  const symbol = cleanSymbol(payload.symbol);
+  const requestedSymbol = normalizeTradableSymbol(cleanSymbol(payload.symbol));
   const sharesMicros = sharesToMicros(payload.shares);
   if (!sharesMicros) {
     throw new HttpError(400, "Enter a share amount greater than zero.");
   }
   const side = payload.side === "sell" ? "sell" : "buy";
-  const snapshot = await fetchMarket();
-  const quote = await resolveQuote(db, symbol, snapshot);
+  const snapshot = isCryptoPair(requestedSymbol)
+    ? undefined
+    : await fetchMarket();
+  const quote = await resolveQuote(db, requestedSymbol, snapshot);
+  const symbol = quote.symbol;
   if (
     !quoteTimestampIsExecutable(
       quote.generatedAt,
@@ -2278,6 +2410,8 @@ export async function POST(request: Request) {
         return await resetSeat(request, payload);
       case "replaceSeatLink":
         return await replaceSeatLink(request, payload);
+      case "expandSeats":
+        return await expandSeats(request, payload);
       case "quote":
         return await quoteStock(request, payload);
       case "trade":

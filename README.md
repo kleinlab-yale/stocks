@@ -1,14 +1,14 @@
 # TickerQuest
 
-TickerQuest combines a free portfolio/watchlist scorecard with a private eight-player family stock game. The public dashboard remains on GitHub Pages and refreshes market data on a weekday schedule. The family game adds shared invitations, simulated trading, realistic tax accounting, and an after-tax leaderboard without requiring anyone to create an account.
+TickerQuest combines a free portfolio/watchlist scorecard with a private ten-player family investing game. The public dashboard remains on GitHub Pages and refreshes market data on a weekday schedule. The family game adds shared invitations, simulated stock and crypto trading, realistic tax accounting, and an after-tax leaderboard without requiring anyone to create an account.
 
 ## Family Portfolio League
 
-Open `game.html` from the dashboard and choose an equal starting bankroll for all eight seats. A game can run for a week, month, year, indefinitely, or until the first portfolio reaches a host-selected monetary target. The host receives eight unique private invitation links.
+Open `game.html` from the dashboard and choose an equal starting bankroll for all ten seats. A game can run for a week, month, year, indefinitely, or until the first portfolio reaches a host-selected monetary target. The host receives ten unique private invitation links. Older active eight-seat games can be expanded in place from the creator-only Host panel; the two added seats receive the original starting cash and no existing player or portfolio is changed.
 
 The game creator occupies Seat 1. Host controls require both the host credential and Seat 1's private player credential, so another player's link can never open the Host view. The creator can:
 
-- invite up to eight players without email addresses or passwords;
+- invite up to ten players without email addresses or passwords;
 - play from Seat 1 while retaining separate creator-only host controls;
 - copy a complete private host recovery link that opens Host controls in another browser;
 - see every player name beside the private link stored on the host device;
@@ -18,7 +18,7 @@ The game creator occupies Seat 1. Host controls require both the host credential
 - start after at least two players have joined; and
 - end the game early and lock the final standings.
 
-Players can enter any valid U.S.-listed stock or ETF ticker, check its newest available price, and buy or sell fractional shares whenever the game is active, including nights and weekends. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Orders use the newest shared quote available—regular-market, pre-market, after-hours, or the most recent closing snapshot—and show that quote’s source and timestamp before execution. A quote more than seven days old cannot execute a trade. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
+Players can enter any valid U.S.-listed stock or ETF ticker or a supported Coinbase USD crypto pair, check its newest available price, and buy or sell fractional units whenever the game is active, including nights and weekends. Common crypto symbols such as `BTC`, `ETH`, `SOL`, `XRP`, `DOGE`, and `ADA` are accepted directly and stored as explicit USD pairs such as `BTC-USD`. Stocks use the newest shared regular-market, pre-market, after-hours, or closing quote; crypto uses the public Coinbase Exchange 24/7 ticker. Prices, their source, and timestamps appear before execution, and a quote more than seven days old cannot execute a trade. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
@@ -51,7 +51,7 @@ These are transparent game rules, not individualized tax calculations or tax adv
 
 ### Shared-service architecture
 
-GitHub Pages serves the public game interface. A small Cloudflare-compatible service stores games, seats, trades, FIFO lots, and wash-sale adjustments in D1. Raw host and player tokens are only returned in private links; the database stores their SHA-256 hashes. The host’s original eight invitation links are also kept in that host browser so they can be copied again without an account.
+GitHub Pages serves the public game interface. A small Cloudflare-compatible service stores games, seats, trades, FIFO lots, and wash-sale adjustments in D1. Raw host and player tokens are only returned in private links; the database stores their SHA-256 hashes. The host’s original ten invitation links are also kept in that host browser so they can be copied again without an account.
 
 The service source lives in the same repository:
 
