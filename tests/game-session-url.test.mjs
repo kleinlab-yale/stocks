@@ -6,7 +6,7 @@ import vm from "node:vm";
 const gameSource = readFileSync(new URL("../site/game.js", import.meta.url), "utf8");
 const gameId = "b42e9743-1f0c-4957-ad5c-83d490e12f65";
 
-function bootGame({ search, stored = {} }) {
+function bootGame({ search, stored = {}, fetchImpl }) {
   const values = new Map(Object.entries(stored));
   const replacedUrls = [];
   const root = { addEventListener() {}, innerHTML: "" };
@@ -32,7 +32,7 @@ function bootGame({ search, stored = {} }) {
         return null;
       },
     },
-    fetch: () => new Promise(() => {}),
+    fetch: fetchImpl ?? (() => new Promise(() => {})),
     history: {
       replaceState(_state, _title, url) {
         replacedUrls.push(String(url));
@@ -59,13 +59,38 @@ function bootGame({ search, stored = {} }) {
         protocol: "https:",
         search,
       },
+      scrollTo() {},
       setInterval: () => 1,
       setTimeout: () => 1,
     },
   };
 
   vm.runInNewContext(gameSource, context);
-  return { replacedUrls, values };
+  return { replacedUrls, roleSwitch, values };
+}
+
+function gameStateResponse(seatNumber) {
+  return {
+    ok: true,
+    async json() {
+      return {
+        game: {
+          name: "1st Klein Millionaire",
+          status: "lobby",
+          durationDays: 0,
+          startingCashCents: 10_000_000,
+        },
+        you: {
+          seatNumber,
+          playerName: seatNumber === 1 ? "AI DARYL" : "Grandpa",
+        },
+        seats: [
+          { seatNumber: 1, playerName: "AI DARYL", joined: true },
+          { seatNumber: 2, playerName: "Grandpa", joined: true },
+        ],
+      };
+    },
+  };
 }
 
 test("restores both creator credentials to a bare saved-game URL", () => {
@@ -114,4 +139,25 @@ test("keeps a player invitation in the address bar and saves it for the league",
     values.get(`tickerquest:game:${gameId}:player`),
     inviteToken,
   );
+});
+
+test("Seat 1 player link reveals creator-only Host controls without a host token", async () => {
+  const { roleSwitch } = bootGame({
+    search: `?game=${gameId}&invite=seat-one-player-token`,
+    fetchImpl: async () => gameStateResponse(1),
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(roleSwitch.hidden, false);
+  assert.equal(roleSwitch.textContent, "Host controls");
+});
+
+test("a non-creator player link keeps Host controls hidden", async () => {
+  const { roleSwitch } = bootGame({
+    search: `?game=${gameId}&invite=seat-two-player-token`,
+    fetchImpl: async () => gameStateResponse(2),
+  });
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(roleSwitch.hidden, true);
 });

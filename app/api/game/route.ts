@@ -350,14 +350,9 @@ async function requireCreatorHost(
   gameId: string,
   request: Request,
 ) {
-  const game = await requireHost(db, gameId, bearerToken(request));
-  const playerToken = creatorPlayerToken(request);
-  if (!playerToken) {
-    throw new HttpError(
-      401,
-      "The complete game-creator link is required for Host controls.",
-    );
-  }
+  const authorizationToken = bearerToken(request);
+  const suppliedCreatorToken = creatorPlayerToken(request);
+  const playerToken = suppliedCreatorToken || authorizationToken;
   const creatorSeat = await requirePlayer(db, gameId, playerToken);
   if (creatorSeat.seat_number !== 1) {
     throw new HttpError(
@@ -365,7 +360,10 @@ async function requireCreatorHost(
       "Only the game creator in Seat 1 can use Host controls.",
     );
   }
-  return game;
+  if (suppliedCreatorToken && suppliedCreatorToken !== authorizationToken) {
+    return requireHost(db, gameId, authorizationToken);
+  }
+  return gameById(db, gameId);
 }
 
 async function requirePlayer(
@@ -1536,6 +1534,7 @@ async function health(request: Request) {
       hostSeatLinks: true,
       maxSeats: MAX_SEATS,
       crypto: true,
+      seatOneHostAccess: true,
     },
   });
 }

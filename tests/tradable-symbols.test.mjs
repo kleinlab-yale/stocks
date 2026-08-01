@@ -10,7 +10,9 @@ import {
 
 test("common crypto symbols normalize to explicit Coinbase USD pairs", () => {
   assert.equal(normalizeTradableSymbol("btc"), "BTC-USD");
+  assert.equal(normalizeTradableSymbol("Bitcoin"), "BTC-USD");
   assert.equal(normalizeTradableSymbol(" ETH "), "ETH-USD");
+  assert.equal(normalizeTradableSymbol("Ethereum"), "ETH-USD");
   assert.equal(normalizeTradableSymbol("SOL-USD"), "SOL-USD");
 });
 

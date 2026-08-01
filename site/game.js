@@ -203,7 +203,12 @@
   }
 
   function tokenFor(role = currentRole) {
-    return getStored(role === "host" ? "host" : "player") || "";
+    if (role !== "host") return getStored("player") || "";
+    return (
+      (creatorSeatVerified ? getStored("player") : "") ||
+      getStored("host") ||
+      ""
+    );
   }
 
   function invitationTokens() {
@@ -226,11 +231,11 @@
   }
 
   function updateRoleSwitch() {
-    const hasBoth = Boolean(
-      creatorSeatVerified && getStored("host") && getStored("player"),
+    const hasCreatorAccess = Boolean(
+      creatorSeatVerified && getStored("player"),
     );
-    roleSwitch.hidden = !hasBoth;
-    if (hasBoth) {
+    roleSwitch.hidden = !hasCreatorAccess;
+    if (hasCreatorAccess) {
       roleSwitch.textContent =
         currentRole === "host" ? "Switch to player" : "Host controls";
     }
@@ -268,7 +273,11 @@
     };
     const token = tokenFor(role);
     if (token) headers.Authorization = `Bearer ${token}`;
-    if (role === "host" && tokenFor("player")) {
+    if (
+      role === "host" &&
+      token === getStored("host") &&
+      tokenFor("player")
+    ) {
       headers["X-Creator-Player-Token"] = tokenFor("player");
     }
     if (body) headers["Content-Type"] = "application/json";
@@ -715,7 +724,7 @@
                   <button class="${tradeSide === "sell" ? "active" : ""}" type="button" data-action="trade-side" data-side="sell">Sell</button>
                 </div>
                 <label class="game-field">
-                  <span>Any U.S. stock, ETF, or supported crypto</span>
+                  <span>Any U.S. stock, ETF, or supported crypto · Bitcoin = BTC</span>
                   <div class="ticker-entry">
                     <input name="symbol" list="game-ticker-options" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="AAPL or BTC" value="${escapeHtml(tradeSymbol)}" required>
                     <button class="secondary-action" type="button" data-action="get-quote">Check price</button>
@@ -723,7 +732,7 @@
                   <datalist id="game-ticker-options">${symbolOptions}</datalist>
                 </label>
                 <label class="game-field"><span>Shares</span><input name="shares" type="number" min="0.000001" step="0.000001" inputmode="decimal" placeholder="0" required></label>
-                <div class="market-closed" data-quote-context>Enter a stock ticker or crypto symbol such as BTC, then check its live price.</div>
+                <div class="market-closed" data-quote-context>For Bitcoin enter BTC, BTC-USD, or Bitcoin, then check its live 24/7 price.</div>
                 <div class="trade-quote"><span>Latest available quote</span><strong data-trade-price>—</strong></div>
                 <div class="trade-summary">
                   <span>Estimated value<strong data-trade-value>$0.00</strong></span>

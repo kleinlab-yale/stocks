@@ -6,7 +6,7 @@ TickerQuest combines a free portfolio/watchlist scorecard with a private ten-pla
 
 Open `game.html` from the dashboard and choose an equal starting bankroll for all ten seats. A game can run for a week, month, year, indefinitely, or until the first portfolio reaches a host-selected monetary target. The host receives ten unique private invitation links. Older active eight-seat games can be expanded in place from the creator-only Host panel; the two added seats receive the original starting cash and no existing player or portfolio is changed.
 
-The game creator occupies Seat 1. Host controls require both the host credential and Seat 1's private player credential, so another player's link can never open the Host view. The creator can:
+The game creator occupies Seat 1. Seat 1's private player credential is sufficient to reveal and authenticate Host controls, while Seats 2–10 remain player-only. Complete recovery links containing both the original host credential and Seat 1 credential continue to work. The creator can:
 
 - invite up to ten players without email addresses or passwords;
 - play from Seat 1 while retaining separate creator-only host controls;
@@ -18,7 +18,7 @@ The game creator occupies Seat 1. Host controls require both the host credential
 - start after at least two players have joined; and
 - end the game early and lock the final standings.
 
-Players can enter any valid U.S.-listed stock or ETF ticker or a supported Coinbase USD crypto pair, check its newest available price, and buy or sell fractional units whenever the game is active, including nights and weekends. Common crypto symbols such as `BTC`, `ETH`, `SOL`, `XRP`, `DOGE`, and `ADA` are accepted directly and stored as explicit USD pairs such as `BTC-USD`. Stocks use the newest shared regular-market, pre-market, after-hours, or closing quote; crypto uses the public Coinbase Exchange 24/7 ticker. Prices, their source, and timestamps appear before execution, and a quote more than seven days old cannot execute a trade. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
+Players can enter any valid U.S.-listed stock or ETF ticker or a supported Coinbase USD crypto pair, check its newest available price, and buy or sell fractional units whenever the game is active, including nights and weekends. Bitcoin accepts `BTC`, `BTC-USD`, or `Bitcoin`; other common crypto symbols such as `ETH`, `SOL`, `XRP`, `DOGE`, and `ADA` are accepted directly and stored as explicit USD pairs. Stocks use the newest shared regular-market, pre-market, after-hours, or closing quote; crypto uses the public Coinbase Exchange 24/7 ticker. Prices, their source, and timestamps appear before execution, and a quote more than seven days old cannot execute a trade. The original dashboard watchlist is only a suggestion list and does not limit game purchases. Everyone can see the leaderboard, each player’s current holdings, and recent league activity. The page is designed for phone use and refreshes the shared game every minute.
 
 Player trends and growth rankings can be viewed for the day, week, month, or full game. Completed New York-time periods award spendable game-cash bonuses to a unique winner: $100 daily, $1,000 weekly, and $10,000 monthly. Tied periods pay no bonus. A permanent Bonus bank shows every player’s lifetime bonus total, even after that cash is invested, with an expandable history of every award.
 
@@ -60,7 +60,7 @@ The service source lives in the same repository:
 - `lib/game-rules.js` — testable money, FIFO, tax, and wash-sale calculations; and
 - `site/game.html`, `site/game.css`, and `site/game.js` — family-facing interface.
 
-Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized by the complete creator recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. Player URLs retain only that player's credential. The creator recovery URL contains both the host credential and Seat 1's player credential; the service checks both before returning or accepting Host controls. Rotating Seat 1 access invalidates every older creator recovery URL without changing the creator's portfolio. These complete URLs must be treated like passwords.
+Because this first version deliberately avoids accounts, a lost player link must be recovered or replaced from a browser authorized as Seat 1 or by the complete creator recovery link. Replacing a player link invalidates the old credential but preserves the complete live portfolio. Player URLs retain only that player's credential. A Seat 1 player link reveals the creator-only Host button; every other seat remains player-only. Complete creator recovery URLs containing both the original host credential and Seat 1 credential also remain valid. Rotating Seat 1 access invalidates every older creator recovery URL without changing the creator's portfolio. These private URLs must be treated like passwords.
 
 ## Change the tracked tickers
 
