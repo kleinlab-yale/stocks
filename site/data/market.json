@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T01:45:59.702904Z",
+  "generatedAt": "2026-10-26T01:50:31.380706Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,39 +2411,39 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-26T01:45:59.702904Z",
+    "generatedAt": "2026-10-26T01:50:31.380706Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 42,
-      "averageChangePercent": -0.48,
+      "score": 43,
+      "averageChangePercent": -0.43,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 62516.83,
-          "changePercent": -0.28,
+          "price": 62567.66,
+          "changePercent": -0.2,
           "status": "ok"
         },
         {
           "symbol": "^HSI",
           "name": "Hang Seng",
-          "price": 23092.62,
-          "changePercent": -0.0,
+          "price": 23104.89,
+          "changePercent": 0.05,
           "status": "ok"
         },
         {
           "symbol": "000001.SS",
           "name": "Shanghai",
-          "price": 3672.61,
-          "changePercent": -0.48,
+          "price": 3678.22,
+          "changePercent": -0.33,
           "status": "ok"
         },
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5534.67,
-          "changePercent": -0.28,
+          "price": 5528.33,
+          "changePercent": -0.4,
           "status": "ok"
         },
         {
