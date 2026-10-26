@@ -43,21 +43,6 @@ jobs:
       - name: Refresh market snapshot
         run: python scripts/fetch_market_data.py
 
-      # A real daily data checkpoint also keeps the public repository active,
-      # so GitHub does not disable its schedule after 60 days without code edits.
-      - name: Save market checkpoint
-        if: github.event_name != 'schedule' || github.event.schedule == '11 21 * * *'
-        run: |
-          if git diff --quiet -- site/data/market.json; then
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add site/data/market.json
-          git commit -m 'Save daily market snapshot'
-          git pull --rebase origin main
-          git push origin HEAD:main
-
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
@@ -69,3 +54,25 @@ jobs:
       - name: Publish
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # Checkpoint only after publishing, so saving history cannot delay prices.
+      # Daily data commits keep GitHub's 60-day inactivity rule from pausing us.
+      - name: Save market checkpoint
+        if: github.event_name != 'schedule' || github.event.schedule == '11 21 * * *'
+        run: |
+          if git diff --quiet -- site/data/market.json; then
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add site/data/market.json
+          git commit -m 'Save daily market snapshot'
+          for attempt in 1 2 3; do
+            # Only the generated snapshot is replayed. Prefer its newest data
+            # if another completed run saved a checkpoint during this run.
+            git pull --rebase --strategy-option=theirs origin main
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+          done
+          exit 1
