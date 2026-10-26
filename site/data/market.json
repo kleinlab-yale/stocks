@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T01:40:56.244143Z",
+  "generatedAt": "2026-10-26T01:42:04.024984Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,18 +2411,18 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-26T01:40:56.244143Z",
+    "generatedAt": "2026-10-26T01:42:04.024984Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 48,
-      "averageChangePercent": -0.11,
+      "score": 49,
+      "averageChangePercent": -0.08,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 62611.36,
-          "changePercent": -0.13,
+          "price": 62602.45,
+          "changePercent": -0.14,
           "status": "ok"
         },
         {
@@ -2442,8 +2442,8 @@
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5493.16,
-          "changePercent": -1.03,
+          "price": 5503.98,
+          "changePercent": -0.83,
           "status": "ok"
         },
         {
