@@ -386,6 +386,9 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
         current_price = regular_price or previous_close
     if current_price is None:
         raise RuntimeError("No usable price returned")
+    quoted_at = intraday.index[-1] if not intraday.empty else daily.index[-1]
+    if quoted_at.tzinfo is None:
+        quoted_at = quoted_at.replace(tzinfo=EASTERN)
     if not sparkline or sparkline[-1] != round(current_price, 4):
         sparkline.append(round(current_price, 4))
 
@@ -393,6 +396,7 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
         "symbol": symbol,
         "name": item.get("name") or metadata.get("shortName") or symbol,
         "currency": metadata.get("currency") or "USD",
+        "quotedAt": quoted_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"),
         "price": round(current_price, 4),
         "regularPrice": round(regular_price, 4) if regular_price is not None else None,
         "previousClose": round(previous_close, 4) if previous_close is not None else None,
@@ -411,7 +415,13 @@ def fetch_symbol(item: dict[str, str], now_et: datetime) -> dict[str, Any]:
 def load_previous() -> dict[str, dict[str, Any]]:
     try:
         payload = json.loads(OUTPUT_PATH.read_text())
-        return {item["symbol"]: item for item in payload.get("symbols", [])}
+        return {
+            item["symbol"]: {
+                **item,
+                "quotedAt": item.get("quotedAt") or payload.get("generatedAt"),
+            }
+            for item in payload.get("symbols", [])
+        }
     except (OSError, KeyError, TypeError, json.JSONDecodeError):
         return {}
 
