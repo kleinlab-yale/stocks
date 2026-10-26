@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T01:39:14.685401Z",
+  "generatedAt": "2026-10-26T01:40:56.244143Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,18 +2411,18 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-26T01:39:14.685401Z",
+    "generatedAt": "2026-10-26T01:40:56.244143Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 47,
-      "averageChangePercent": -0.17,
+      "score": 48,
+      "averageChangePercent": -0.11,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 62537.41,
-          "changePercent": -0.25,
+          "price": 62611.36,
+          "changePercent": -0.13,
           "status": "ok"
         },
         {
@@ -2442,8 +2442,8 @@
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5479.56,
-          "changePercent": -1.27,
+          "price": 5493.16,
+          "changePercent": -1.03,
           "status": "ok"
         },
         {
@@ -2459,52 +2459,59 @@
     "news": {
       "status": "ok",
       "score": 45,
-      "articleCount": 5,
+      "articleCount": 13,
       "windowHours": 18,
       "stories": [
         {
-          "title": "How the Seizure of a Russian Vessel Brought the Ukraine War to the Arctic",
-          "url": "https://finance.yahoo.com/m/b387fd15-a7e7-3f06-8c9c-923e33168824/how-the-seizure-of-a-russian.html",
-          "source": "The Wall Street Journal",
-          "seenAt": "2026-10-25T21:00:00Z",
+          "title": "Barack Obama mocks President Trump tariff war with Canada",
+          "url": "https://toronto.citynews.ca/2026/10/25/well-known-evil-empire-barack-obama-mocks-president-trumps-tariff-war-with-canada/",
+          "source": "toronto.citynews.ca",
+          "seenAt": "2026-10-25T19:15:00Z",
+          "category": "Policy",
+          "tone": "negative"
+        },
+        {
+          "title": "Iranians fear return to all - out war with US and Israeli elections",
+          "url": "https://www.wlwt.com/article/iran-war-more-strikes-feared-israel-us-elections/74241134",
+          "source": "wlwt.com",
+          "seenAt": "2026-10-25T19:15:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "The Saudi Airline That Launched Right in the Middle of a War",
-          "url": "https://finance.yahoo.com/m/14d6a35f-d656-35ac-b57d-6b47917bde68/the-saudi-airline-that.html",
-          "source": "The Wall Street Journal",
-          "seenAt": "2026-10-25T02:00:00Z",
+          "title": "Westfield honors local Revolutionary War heroes with historical tour",
+          "url": "https://www.westernmassnews.com/2026/10/25/westfield-honors-local-revolutionary-war-heroes-with-historical-tour/",
+          "source": "westernmassnews.com",
+          "seenAt": "2026-10-25T19:15:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "SPCX Rises Overnight: Musk Confirms $40B GPU Deal, Warns On Neoclouds \u2014 Dan Ives Sees \u2018Game Of Thrones\u2019 Compute War",
-          "url": "https://finance.yahoo.com/technology/ai/articles/spcx-rises-overnight-musk-confirms-013041574.html",
-          "source": "Stocktwits",
-          "seenAt": "2026-10-26T01:30:41Z",
+          "title": "Trump talks midterm issues , praises first lady on securing ceasefire after casting early vote in Florida",
+          "url": "https://www.fox7austin.com/news/trump-casts-his-midterm-ballot-early-florida",
+          "source": "fox7austin.com",
+          "seenAt": "2026-10-25T19:15:00Z",
           "category": "Geopolitics",
-          "tone": "mixed"
+          "tone": "positive"
         },
         {
-          "title": "Intel vs. SK Hynix: Revenue Trends to Help Investors Weigh Which Artificial Intelligence Stock to Buy",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/intel-vs-sk-hynix-revenue-172509392.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-25T17:25:09Z",
-          "category": "AI & chips",
-          "tone": "mixed"
+          "title": "Iran threatens to attack Internet links in the Middle East",
+          "url": "http://www.orlandoecho.com/news/279396653/iran-threatens-to-attack-internet-links-in-the-middle-east",
+          "source": "orlandoecho.com",
+          "seenAt": "2026-10-25T19:15:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
         },
         {
-          "title": "SpaceX Just Shared Great News for Artificial Intelligence (AI) Investors. Here Are 2 Stocks That Could Benefit",
-          "url": "https://finance.yahoo.com/technology/ai/articles/spacex-just-shared-great-news-072801290.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-25T07:28:01Z",
+          "title": "MODA working on better social media AI disclosure",
+          "url": "https://www.taipeitimes.com/News/taiwan/archives/2026/10/26/2003866622",
+          "source": "taipeitimes.com",
+          "seenAt": "2026-10-25T19:15:00Z",
           "category": "AI & chips",
           "tone": "mixed"
         }
       ],
-      "source": "Yahoo Finance News",
-      "fallbackNote": "GDELT unavailable: HTTPError"
+      "source": "GDELT DOC 2.0"
     },
     "method": "Portfolio extended hours 50% \u00b7 Asian markets 25% \u00b7 overnight news 25%"
   },
