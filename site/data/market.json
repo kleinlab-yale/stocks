@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T01:36:42.766808Z",
+  "generatedAt": "2026-10-26T01:39:14.685401Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -12,6 +12,7 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 211.114,
       "regularPrice": 210.96,
       "previousClose": 210.96,
@@ -354,6 +355,7 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 640.1,
       "regularPrice": 642.62,
       "previousClose": 642.62,
@@ -696,6 +698,7 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 516.8,
       "regularPrice": 516.79,
       "previousClose": 516.79,
@@ -1038,6 +1041,7 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 524.9113,
       "regularPrice": 524.51,
       "previousClose": 524.51,
@@ -1380,6 +1384,7 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 318.1,
       "regularPrice": 317.28,
       "previousClose": 317.28,
@@ -1722,6 +1727,7 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 417.4899,
       "regularPrice": 418.51,
       "previousClose": 418.51,
@@ -2064,6 +2070,7 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
+      "quotedAt": "2026-10-23T23:55:00Z",
       "price": 1.7085,
       "regularPrice": 1.73,
       "previousClose": 1.73,
@@ -2404,18 +2411,18 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-26T01:36:42.766808Z",
+    "generatedAt": "2026-10-26T01:39:14.685401Z",
     "status": "ok",
     "asia": {
       "status": "ok",
       "score": 47,
-      "averageChangePercent": -0.15,
+      "averageChangePercent": -0.17,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 62441.11,
-          "changePercent": -0.4,
+          "price": 62537.41,
+          "changePercent": -0.25,
           "status": "ok"
         },
         {
@@ -2435,8 +2442,8 @@
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5501.4,
-          "changePercent": -0.88,
+          "price": 5479.56,
+          "changePercent": -1.27,
           "status": "ok"
         },
         {
