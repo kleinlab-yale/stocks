@@ -87,7 +87,9 @@ Visitors can also add or remove holdings and record any number of purchases for 
 2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
 3. Run **Actions → Refresh market data & publish → Run workflow** once, or wait for the schedule.
 
-The workflow publishes `site/` to `https://kleinlab-yale.github.io/stocks/`. It refreshes every 15 minutes on weekdays across the U.S. pre-market, regular, and after-hours window. GitHub schedules can start late during busy periods, so the timestamp and freshness label in the page are authoritative.
+The workflow publishes `site/` to `https://kleinlab-yale.github.io/stocks/`. It refreshes every 15 minutes on weekdays across the U.S. pre-market, regular, and after-hours window, plus a daily 9:11 p.m. New York-time checkpoint. The daily run commits the real market snapshot, which keeps repository activity current so GitHub does not disable the schedule after 60 days without code edits. GitHub schedules can start late during busy periods, so the timestamp and freshness label in the page are authoritative.
+
+If the shared snapshot falls more than one hour behind, the game refreshes held tickers directly through the live quote provider and values positions with the newest available quote. Each symbol keeps its actual quote timestamp, including when a previous quote is carried forward, so a newly generated file cannot disguise an old price as fresh.
 
 ## Run locally
 

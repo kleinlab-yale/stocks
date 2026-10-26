@@ -25,6 +25,10 @@ import {
   isCryptoPair,
   normalizeTradableSymbol,
 } from "@/lib/tradable-symbols.js";
+import {
+  marketSnapshotIsFresh,
+  newestQuotesBySymbol,
+} from "@/lib/market-freshness.js";
 
 export const dynamic = "force-dynamic";
 
@@ -113,6 +117,8 @@ type WashLossRow = {
 type MarketSymbol = {
   symbol: string;
   name?: string;
+  status?: string;
+  quotedAt?: string;
   price: number | null;
   regularPrice?: number | null;
   previousClose?: number | null;
@@ -442,7 +448,7 @@ function snapshotQuote(
       Number.isFinite(previousClose) && previousClose > 0
         ? Math.round(previousClose * 100)
         : null,
-    generatedAt: snapshot.generatedAt,
+    generatedAt: item.quotedAt ?? snapshot.generatedAt,
     source: "TickerQuest extended-hours feed",
   };
 }
@@ -880,7 +886,15 @@ async function resolveQuote(
   snapshot?: MarketSnapshot,
 ) {
   const configured = snapshot ? snapshotQuote(snapshot, symbol) : null;
-  if (configured) return configured;
+  if (
+    configured &&
+    marketSnapshotIsFresh(snapshot) &&
+    !["stale", "unavailable"].includes(
+      snapshot?.symbols.find((item) => item.symbol === symbol)?.status ?? "ok",
+    )
+  ) {
+    return configured;
+  }
 
   const memory = quoteMemoryCache.get(symbol);
   if (memory && memory.expiresAt > Date.now()) return memory.quote;
@@ -937,16 +951,19 @@ async function resolveQuote(
     });
     return quote;
   } catch (error) {
-    const fallback = persistent ?? (await cachedQuote(db, symbol));
+    const cached = persistent ?? (await cachedQuote(db, symbol));
+    const fallback = newestQuotesBySymbol(
+      [configured, cached?.quote].filter(Boolean),
+    )[0] as ResolvedQuote | undefined;
     if (
       fallback &&
       quoteTimestampIsExecutable(
-        fallback.quote.generatedAt,
+        fallback.generatedAt,
         Date.now(),
         MAX_EXECUTION_QUOTE_AGE_MS,
       )
     ) {
-      return fallback.quote;
+      return fallback;
     }
     if (error instanceof HttpError) throw error;
     throw new HttpError(
@@ -2145,19 +2162,26 @@ async function gameState(request: Request) {
   const configuredQuotes = market.symbols
     .map((item) => snapshotQuote(market, item.symbol))
     .filter((item): item is ResolvedQuote => Boolean(item));
-  const configuredSymbols = new Set(
-    configuredQuotes.map((item) => item.symbol),
+  const freshConfiguredSymbols = new Set(
+    marketSnapshotIsFresh(market)
+      ? market.symbols
+          .filter((item) =>
+            Number(item.price) > 0 &&
+            !["stale", "unavailable"].includes(item.status ?? "ok"),
+          )
+          .map((item) => item.symbol)
+      : [],
   );
-  const additionalSymbols = [
-    ...new Set(
-      lotResult.results
-        .map((lot) => lot.symbol)
-        .filter((symbol) => !configuredSymbols.has(symbol)),
-    ),
-  ];
-  const additionalQuotes = await cachedQuotes(db, additionalSymbols);
-  refreshQuotesInBackground(db, additionalSymbols);
-  const allQuotes = [...configuredQuotes, ...additionalQuotes];
+  const heldSymbols = [...new Set(lotResult.results.map((lot) => lot.symbol))];
+  const heldQuotes = await cachedQuotes(db, heldSymbols);
+  refreshQuotesInBackground(
+    db,
+    heldSymbols.filter((symbol) => !freshConfiguredSymbols.has(symbol)),
+  );
+  const allQuotes = newestQuotesBySymbol([
+    ...configuredQuotes,
+    ...heldQuotes,
+  ]) as ResolvedQuote[];
   const quotes = new Map(allQuotes.map((item) => [item.symbol, item]));
   const joinedSeats = seatResult.results.filter((seat) => seat.player_name);
   const leaderboard = joinedSeats
@@ -2290,7 +2314,13 @@ async function gameState(request: Request) {
       leaderboard,
     );
 
-  const sessionLabel = market.session?.label ?? "Market unavailable";
+  const sessionLabel = marketSnapshotIsFresh(market)
+    ? market.session?.label ?? "Latest available prices"
+    : "Shared feed delayed · Live quote fallback";
+  const latestQuoteAt = allQuotes.reduce(
+    (latest, quote) => Math.max(latest, Date.parse(quote.generatedAt) || 0),
+    0,
+  );
   return json(request, {
     game: {
       id: game.id,
@@ -2363,8 +2393,11 @@ async function gameState(request: Request) {
       createdAt: Number(row.created_at),
     })),
     market: {
-      generatedAt: market.generatedAt,
-      mode: market.mode,
+      generatedAt: latestQuoteAt
+        ? new Date(latestQuoteAt).toISOString()
+        : market.generatedAt,
+      feedGeneratedAt: market.generatedAt,
+      mode: marketSnapshotIsFresh(market) ? market.mode : "degraded",
       sessionLabel,
       executionPolicy: "latest-available",
       canTrade: tradingIsActive(
