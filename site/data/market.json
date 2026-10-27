@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T01:50:31.380706Z",
+  "generatedAt": "2026-10-27T06:14:15.094188Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -12,27 +12,26 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 211.114,
-      "regularPrice": 210.96,
-      "previousClose": 210.96,
-      "weekAgoClose": 217.09,
-      "yearAgoClose": 186.26,
-      "fiveYearAgoClose": 25.567,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 216.5,
+      "regularPrice": 216.0,
+      "previousClose": 216.0,
+      "weekAgoClose": 216.47,
+      "yearAgoClose": 202.49,
+      "fiveYearAgoClose": 29.752,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        217.23,
         214.13,
         217.09,
         216.47,
         221.97,
         212.21,
         210.96,
-        211.114
+        216.0,
+        216.5
       ],
       "yearSparkline": [
-        186.26,
         202.49,
         188.15,
         190.17,
@@ -84,10 +83,10 @@
         233.95,
         229.28,
         214.13,
-        210.96
+        210.96,
+        216.0
       ],
       "fiveYearSparkline": [
-        25.567,
         29.752,
         30.39,
         32.985,
@@ -347,7 +346,8 @@
         233.95,
         229.28,
         214.13,
-        210.96
+        210.96,
+        216.0
       ],
       "status": "ok"
     },
@@ -355,27 +355,26 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 640.1,
-      "regularPrice": 642.62,
-      "previousClose": 642.62,
-      "weekAgoClose": 705.44,
-      "yearAgoClose": 738.36,
-      "fiveYearAgoClose": 323.57,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 633.331,
+      "regularPrice": 630.56,
+      "previousClose": 630.56,
+      "weekAgoClose": 694.25,
+      "yearAgoClose": 648.35,
+      "fiveYearAgoClose": 341.13,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        736.72,
         709.33,
         705.44,
         694.25,
         697.52,
         648.85,
         642.62,
-        640.1
+        630.56,
+        633.331
       ],
       "yearSparkline": [
-        738.36,
         648.35,
         621.71,
         609.46,
@@ -427,10 +426,10 @@
         728.08,
         718.67,
         709.33,
-        642.62
+        642.62,
+        630.56
       ],
       "fiveYearSparkline": [
-        323.57,
         341.13,
         340.89,
         345.3,
@@ -690,7 +689,8 @@
         728.08,
         718.67,
         709.33,
-        642.62
+        642.62,
+        630.56
       ],
       "status": "ok"
     },
@@ -698,27 +698,26 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 516.8,
-      "regularPrice": 516.79,
-      "previousClose": 516.79,
-      "weekAgoClose": 538.05,
-      "yearAgoClose": 252.92,
-      "fiveYearAgoClose": 120.23,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 535.66,
+      "regularPrice": 531.28,
+      "previousClose": 531.28,
+      "weekAgoClose": 534.74,
+      "yearAgoClose": 256.12,
+      "fiveYearAgoClose": 136.34,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        562.23,
         528.75,
         538.05,
         534.74,
         552.72,
         507.93,
         516.79,
-        516.8
+        531.28,
+        535.66
       ],
       "yearSparkline": [
-        252.92,
         256.12,
         233.54,
         246.81,
@@ -770,10 +769,10 @@
         633.91,
         608.1,
         528.75,
-        516.79
+        516.79,
+        531.28
       ],
       "fiveYearSparkline": [
-        120.23,
         136.34,
         147.89,
         155.41,
@@ -1033,7 +1032,8 @@
         633.91,
         608.1,
         528.75,
-        516.79
+        516.79,
+        531.28
       ],
       "status": "ok"
     },
@@ -1041,27 +1041,26 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 524.9113,
-      "regularPrice": 524.51,
-      "previousClose": 524.51,
-      "weekAgoClose": 533.52,
-      "yearAgoClose": 523.61,
-      "fiveYearAgoClose": 331.62,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 532.4412,
+      "regularPrice": 532.6,
+      "previousClose": 532.6,
+      "weekAgoClose": 531.87,
+      "yearAgoClose": 517.81,
+      "fiveYearAgoClose": 336.06,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        539.44,
         529.05,
         533.52,
         531.87,
         532.95,
         521.08,
         524.51,
-        524.9113
+        532.6,
+        532.4412
       ],
       "yearSparkline": [
-        523.61,
         517.81,
         496.82,
         510.18,
@@ -1113,10 +1112,10 @@
         517.53,
         535.07,
         529.05,
-        524.51
+        524.51,
+        532.6
       ],
       "fiveYearSparkline": [
-        331.62,
         336.06,
         336.72,
         343.11,
@@ -1376,7 +1375,8 @@
         517.53,
         535.07,
         529.05,
-        524.51
+        524.51,
+        532.6
       ],
       "status": "ok"
     },
@@ -1384,27 +1384,26 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 318.1,
-      "regularPrice": 317.28,
-      "previousClose": 317.28,
-      "weekAgoClose": 340.16,
-      "yearAgoClose": 260.51,
-      "fiveYearAgoClose": 148.2705,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 315.0821,
+      "regularPrice": 314.19,
+      "previousClose": 314.19,
+      "weekAgoClose": 336.4,
+      "yearAgoClose": 281.82,
+      "fiveYearAgoClose": 149.241,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        344.91,
         336.91,
         340.16,
         336.4,
         330.95,
         320.76,
         317.28,
-        318.1
+        314.19,
+        315.0821
       ],
       "yearSparkline": [
-        260.51,
         281.82,
         279.7,
         276.98,
@@ -1456,10 +1455,10 @@
         340.35,
         347.86,
         336.91,
-        317.28
+        317.28,
+        314.19
       ],
       "fiveYearSparkline": [
-        148.2705,
         149.241,
         149.6455,
         149.9525,
@@ -1719,7 +1718,8 @@
         340.35,
         347.86,
         336.91,
-        317.28
+        317.28,
+        314.19
       ],
       "status": "ok"
     },
@@ -1727,27 +1727,26 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 417.4899,
-      "regularPrice": 418.51,
-      "previousClose": 418.51,
-      "weekAgoClose": 420.22,
-      "yearAgoClose": 294.96,
-      "fiveYearAgoClose": 113.7,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 427.0,
+      "regularPrice": 424.37,
+      "previousClose": 424.37,
+      "weekAgoClose": 425.08,
+      "yearAgoClose": 300.43,
+      "fiveYearAgoClose": 117.8,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        422.25,
         412.61,
         420.22,
         425.08,
         431.89,
         412.35,
         418.51,
-        417.4899
+        424.37,
+        427.0
       ],
       "yearSparkline": [
-        294.96,
         300.43,
         286.5,
         284.82,
@@ -1799,10 +1798,10 @@
         472.78,
         453.31,
         412.61,
-        418.51
+        418.51,
+        424.37
       ],
       "fiveYearSparkline": [
-        113.7,
         117.8,
         118.69,
         124.26,
@@ -2062,7 +2061,8 @@
         472.78,
         453.31,
         412.61,
-        418.51
+        418.51,
+        424.37
       ],
       "status": "ok"
     },
@@ -2070,27 +2070,26 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "quotedAt": "2026-10-23T23:55:00Z",
-      "price": 1.7085,
-      "regularPrice": 1.73,
-      "previousClose": 1.73,
-      "weekAgoClose": 1.81,
-      "yearAgoClose": 16.06,
-      "fiveYearAgoClose": 10.55,
+      "quotedAt": "2026-10-26T23:55:00Z",
+      "price": 1.63,
+      "regularPrice": 1.62,
+      "previousClose": 1.62,
+      "weekAgoClose": 1.68,
+      "yearAgoClose": 16.03,
+      "fiveYearAgoClose": 11.29,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        2.16,
         1.82,
         1.81,
         1.68,
         1.68,
         1.71,
         1.73,
-        1.7085
+        1.62,
+        1.63
       ],
       "yearSparkline": [
-        16.06,
         16.03,
         18.26,
         13.8,
@@ -2142,10 +2141,10 @@
         3.21,
         2.52,
         1.82,
-        1.73
+        1.73,
+        1.62
       ],
       "fiveYearSparkline": [
-        10.55,
         11.29,
         10.65,
         9.7,
@@ -2405,52 +2404,53 @@
         3.21,
         2.52,
         1.82,
-        1.73
+        1.73,
+        1.62
       ],
       "status": "ok"
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-26T01:50:31.380706Z",
+    "generatedAt": "2026-10-27T06:14:15.094188Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 43,
-      "averageChangePercent": -0.43,
+      "score": 62,
+      "averageChangePercent": 0.79,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 62567.66,
-          "changePercent": -0.2,
+          "price": 63348.59,
+          "changePercent": 1.86,
           "status": "ok"
         },
         {
           "symbol": "^HSI",
           "name": "Hang Seng",
-          "price": 23104.89,
-          "changePercent": 0.05,
+          "price": 23086.69,
+          "changePercent": -0.54,
           "status": "ok"
         },
         {
           "symbol": "000001.SS",
           "name": "Shanghai",
-          "price": 3678.22,
-          "changePercent": -0.33,
+          "price": 3691.53,
+          "changePercent": -0.16,
           "status": "ok"
         },
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5528.33,
-          "changePercent": -0.4,
+          "price": 5641.23,
+          "changePercent": 3.14,
           "status": "ok"
         },
         {
           "symbol": "^TWII",
           "name": "Taiwan",
-          "price": 46041.43,
-          "changePercent": -1.81,
+          "price": 46096.23,
+          "changePercent": 0.12,
           "status": "ok"
         }
       ],
@@ -2458,49 +2458,57 @@
     },
     "news": {
       "status": "ok",
-      "score": 45,
-      "articleCount": 5,
+      "score": 37,
+      "articleCount": 11,
       "windowHours": 18,
       "stories": [
         {
-          "title": "How the Seizure of a Russian Vessel Brought the Ukraine War to the Arctic",
-          "url": "https://finance.yahoo.com/m/b387fd15-a7e7-3f06-8c9c-923e33168824/how-the-seizure-of-a-russian.html",
-          "source": "The Wall Street Journal",
-          "seenAt": "2026-10-25T21:00:00Z",
+          "title": "US consumers paying the most for fuel price spikes from Iran war, study says",
+          "url": "https://finance.yahoo.com/news/us-consumers-paying-most-fuel-202001769.html",
+          "source": "Reuters",
+          "seenAt": "2026-10-26T20:20:01Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "The Saudi Airline That Launched Right in the Middle of a War",
-          "url": "https://finance.yahoo.com/m/14d6a35f-d656-35ac-b57d-6b47917bde68/the-saudi-airline-that.html",
-          "source": "The Wall Street Journal",
-          "seenAt": "2026-10-25T02:00:00Z",
+          "title": "Iran War Pushes Trump's Average Gasoline Prices Above Biden's",
+          "url": "https://finance.yahoo.com/energy/articles/iran-war-pushes-trumps-average-200000905.html",
+          "source": "Oilprice.com",
+          "seenAt": "2026-10-26T20:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "SPCX Rises Overnight: Musk Confirms $40B GPU Deal, Warns On Neoclouds \u2014 Dan Ives Sees \u2018Game Of Thrones\u2019 Compute War",
-          "url": "https://finance.yahoo.com/technology/ai/articles/spcx-rises-overnight-musk-confirms-013041574.html",
-          "source": "Stocktwits",
-          "seenAt": "2026-10-26T01:30:41Z",
+          "title": "Canada Has \u2018Woken Up\u2019 Thanks to Trump. How Trade War Could Hurt the U.S.",
+          "url": "https://finance.yahoo.com/m/f757f38c-3643-3049-9c1a-7f56b8b51f05/canada-has-%E2%80%98woken-up%E2%80%99-thanks.html",
+          "source": "Barrons.com",
+          "seenAt": "2026-10-26T18:58:00Z",
+          "category": "Policy",
+          "tone": "negative"
+        },
+        {
+          "title": "The Iran War Just Added $39 Billion to the World's LNG Bill",
+          "url": "https://finance.yahoo.com/energy/articles/iran-war-just-added-39-180000823.html",
+          "source": "Oilprice.com",
+          "seenAt": "2026-10-26T18:00:00Z",
           "category": "Geopolitics",
-          "tone": "mixed"
+          "tone": "negative"
         },
         {
-          "title": "Intel vs. SK Hynix: Revenue Trends to Help Investors Weigh Which Artificial Intelligence Stock to Buy",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/intel-vs-sk-hynix-revenue-172509392.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-25T17:25:09Z",
+          "title": "Meta Is Moving Quickly to Build an AI War Chest. Convertible Stock Could Yield 6%.",
+          "url": "https://finance.yahoo.com/m/51c0fa15-09b5-374f-9d58-4890557c7f17/meta-is-moving-quickly-to.html",
+          "source": "Barrons.com",
+          "seenAt": "2026-10-26T14:37:00Z",
           "category": "AI & chips",
-          "tone": "mixed"
+          "tone": "negative"
         },
         {
-          "title": "SpaceX Just Shared Great News for Artificial Intelligence (AI) Investors. Here Are 2 Stocks That Could Benefit",
-          "url": "https://finance.yahoo.com/technology/ai/articles/spacex-just-shared-great-news-072801290.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-25T07:28:01Z",
-          "category": "AI & chips",
-          "tone": "mixed"
+          "title": "Change War Results in More than $12,000 Donation to Project Pink'd",
+          "url": "https://finance.yahoo.com/healthcare/articles/change-war-results-more-12-123800130.html",
+          "source": "PR Newswire",
+          "seenAt": "2026-10-26T12:38:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
         }
       ],
       "source": "Yahoo Finance News",
