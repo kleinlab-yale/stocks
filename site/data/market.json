@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-30T07:03:36.455477Z",
+  "generatedAt": "2026-10-31T06:57:19.825155Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -12,24 +12,24 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 210.1468,
-      "regularPrice": 213.66,
-      "previousClose": 213.66,
-      "weekAgoClose": 210.96,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 205.2499,
+      "regularPrice": 204.64,
+      "previousClose": 204.64,
+      "weekAgoClose": 216.0,
       "yearAgoClose": 202.49,
       "fiveYearAgoClose": 29.752,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        221.97,
         212.21,
         210.96,
         216.0,
         217.94,
         215.38,
         213.66,
-        210.1468
+        204.64,
+        205.2499
       ],
       "yearSparkline": [
         202.49,
@@ -84,7 +84,7 @@
         229.28,
         214.13,
         210.96,
-        213.66
+        204.64
       ],
       "fiveYearSparkline": [
         29.752,
@@ -347,7 +347,7 @@
         229.28,
         214.13,
         210.96,
-        213.66
+        204.64
       ],
       "status": "ok"
     },
@@ -355,24 +355,24 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 620.8267,
-      "regularPrice": 624.52,
-      "previousClose": 624.52,
-      "weekAgoClose": 642.62,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 614.0,
+      "regularPrice": 614.99,
+      "previousClose": 614.99,
+      "weekAgoClose": 630.56,
       "yearAgoClose": 648.35,
       "fiveYearAgoClose": 341.13,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        697.52,
         648.85,
         642.62,
         630.56,
         620.19,
         612.49,
         624.52,
-        620.8267
+        614.99,
+        614.0
       ],
       "yearSparkline": [
         648.35,
@@ -427,7 +427,7 @@
         718.67,
         709.33,
         642.62,
-        624.52
+        614.99
       ],
       "fiveYearSparkline": [
         341.13,
@@ -690,7 +690,7 @@
         718.67,
         709.33,
         642.62,
-        624.52
+        614.99
       ],
       "status": "ok"
     },
@@ -698,24 +698,24 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 528.1601,
-      "regularPrice": 566.42,
-      "previousClose": 566.42,
-      "weekAgoClose": 516.79,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 508.2186,
+      "regularPrice": 504.8,
+      "previousClose": 504.8,
+      "weekAgoClose": 531.28,
       "yearAgoClose": 256.12,
       "fiveYearAgoClose": 136.34,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        552.72,
         507.93,
         516.79,
         531.28,
         560.26,
         578.44,
         566.42,
-        528.1601
+        504.8,
+        508.2186
       ],
       "yearSparkline": [
         256.12,
@@ -770,7 +770,7 @@
         608.1,
         528.75,
         516.79,
-        566.42
+        504.8
       ],
       "fiveYearSparkline": [
         136.34,
@@ -1033,7 +1033,7 @@
         608.1,
         528.75,
         516.79,
-        566.42
+        504.8
       ],
       "status": "ok"
     },
@@ -1041,24 +1041,24 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 529.0521,
-      "regularPrice": 530.14,
-      "previousClose": 530.14,
-      "weekAgoClose": 524.51,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 522.992,
+      "regularPrice": 521.91,
+      "previousClose": 521.91,
+      "weekAgoClose": 532.6,
       "yearAgoClose": 517.81,
       "fiveYearAgoClose": 336.06,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        532.95,
         521.08,
         524.51,
         532.6,
         531.33,
         531.01,
         530.14,
-        529.0521
+        521.91,
+        522.992
       ],
       "yearSparkline": [
         517.81,
@@ -1113,7 +1113,7 @@
         535.07,
         529.05,
         524.51,
-        530.14
+        521.91
       ],
       "fiveYearSparkline": [
         336.06,
@@ -1376,7 +1376,7 @@
         535.07,
         529.05,
         524.51,
-        530.14
+        521.91
       ],
       "status": "ok"
     },
@@ -1384,24 +1384,24 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 279.1657,
-      "regularPrice": 282.32,
-      "previousClose": 282.32,
-      "weekAgoClose": 317.28,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 279.6785,
+      "regularPrice": 278.22,
+      "previousClose": 278.22,
+      "weekAgoClose": 314.19,
       "yearAgoClose": 281.82,
       "fiveYearAgoClose": 149.241,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        330.95,
         320.76,
         317.28,
         314.19,
         316.83,
         321.89,
         282.32,
-        279.1657
+        278.22,
+        279.6785
       ],
       "yearSparkline": [
         281.82,
@@ -1456,7 +1456,7 @@
         347.86,
         336.91,
         317.28,
-        282.32
+        278.22
       ],
       "fiveYearSparkline": [
         149.241,
@@ -1719,7 +1719,7 @@
         347.86,
         336.91,
         317.28,
-        282.32
+        278.22
       ],
       "status": "ok"
     },
@@ -1727,24 +1727,24 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 419.5,
-      "regularPrice": 431.81,
-      "previousClose": 431.81,
-      "weekAgoClose": 418.51,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 408.785,
+      "regularPrice": 406.13,
+      "previousClose": 406.13,
+      "weekAgoClose": 424.37,
       "yearAgoClose": 300.43,
       "fiveYearAgoClose": 117.8,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        431.89,
         412.35,
         418.51,
         424.37,
         436.87,
         439.51,
         431.81,
-        419.5
+        406.13,
+        408.785
       ],
       "yearSparkline": [
         300.43,
@@ -1799,7 +1799,7 @@
         453.31,
         412.61,
         418.51,
-        431.81
+        406.13
       ],
       "fiveYearSparkline": [
         117.8,
@@ -2062,7 +2062,7 @@
         453.31,
         412.61,
         418.51,
-        431.81
+        406.13
       ],
       "status": "ok"
     },
@@ -2070,24 +2070,24 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "quotedAt": "2026-10-29T23:55:00Z",
-      "price": 1.9285,
-      "regularPrice": 1.98,
-      "previousClose": 1.98,
-      "weekAgoClose": 1.73,
+      "quotedAt": "2026-10-30T23:55:00Z",
+      "price": 1.92,
+      "regularPrice": 1.89,
+      "previousClose": 1.89,
+      "weekAgoClose": 1.62,
       "yearAgoClose": 16.03,
       "fiveYearAgoClose": 11.29,
       "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        1.68,
         1.71,
         1.73,
         1.62,
         1.82,
         1.95,
         1.98,
-        1.9285
+        1.89,
+        1.92
       ],
       "yearSparkline": [
         16.03,
@@ -2142,7 +2142,7 @@
         2.52,
         1.82,
         1.73,
-        1.98
+        1.89
       ],
       "fiveYearSparkline": [
         11.29,
@@ -2405,18 +2405,18 @@
         2.52,
         1.82,
         1.73,
-        1.98
+        1.89
       ],
       "status": "ok"
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-30T07:03:36.455477Z",
+    "generatedAt": "2026-10-31T06:57:19.825155Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 33,
-      "averageChangePercent": -1.29,
+      "score": 32,
+      "averageChangePercent": -1.35,
       "markets": [
         {
           "symbol": "^N225",
@@ -2428,15 +2428,15 @@
         {
           "symbol": "^HSI",
           "name": "Hang Seng",
-          "price": 23312.14,
-          "changePercent": 1.54,
+          "price": 23294.42,
+          "changePercent": 1.46,
           "status": "ok"
         },
         {
           "symbol": "000001.SS",
           "name": "Shanghai",
-          "price": 3605.42,
-          "changePercent": -1.26,
+          "price": 3599.02,
+          "changePercent": -1.44,
           "status": "ok"
         },
         {
@@ -2458,55 +2458,55 @@
     },
     "news": {
       "status": "ok",
-      "score": 38,
-      "articleCount": 14,
+      "score": 42,
+      "articleCount": 13,
       "windowHours": 18,
       "stories": [
         {
-          "title": "National Bank of Ukraine lifts key rate to 16.5% as war risks fuel inflation",
-          "url": "https://finance.yahoo.com/economy/policy/articles/national-bank-ukraine-lifts-key-164330816.html",
-          "source": "Investing.com",
-          "seenAt": "2026-10-29T16:43:30Z",
+          "title": "US Oil Industry Earned Billions More in Profits Than During the Same Period in 2025 Amid Iran War",
+          "url": "https://finance.yahoo.com/energy/articles/us-oil-industry-earned-billions-191930856.html",
+          "source": "First for Money",
+          "seenAt": "2026-10-30T19:19:30Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Canada's labour leaders to establish war room to fight Carney's strike restrictions",
-          "url": "https://finance.yahoo.com/economy/policy/articles/canadas-labour-leaders-establish-war-154200331.html",
-          "source": "CNW Group",
-          "seenAt": "2026-10-29T15:42:00Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Oil set for fourth monthly gain as Hormuz tanker attack highlights supply risks from war",
-          "url": "https://finance.yahoo.com/news/oil-rises-supply-concerns-houthis-022725347.html",
-          "source": "Reuters",
-          "seenAt": "2026-10-30T03:59:10Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Billionaire Bill Gates Just Issued a Blunt Warning About Artificial Intelligence",
-          "url": "https://finance.yahoo.com/technology/ai/articles/billionaire-bill-gates-just-issued-222000497.html",
+          "title": "Chevron vs. Enbridge: Which Energy Giant Makes More Money Off the Iran War Oil Price Shock?",
+          "url": "https://finance.yahoo.com/energy/articles/chevron-vs-enbridge-energy-giant-180101726.html",
           "source": "Motley Fool",
-          "seenAt": "2026-10-29T22:20:00Z",
-          "category": "AI & chips",
-          "tone": "negative"
-        },
-        {
-          "title": "Will Nelson Peltz\u2019s $1.4 Billion Wendy\u2019s Buyout Offer Ignite a Bidding War?",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/nelson-peltz-1-4-billion-202843392.html",
-          "source": "Barchart",
-          "seenAt": "2026-10-29T20:28:43Z",
+          "seenAt": "2026-10-30T18:01:01Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "BYD Earnings Miss Estimates as China's EV Price War Takes Its Toll",
-          "url": "https://finance.yahoo.com/markets/stocks/articles/byd-earnings-miss-estimates-chinas-190000731.html",
+          "title": "Trump slammed Biden-Harris for the \u2018war on energy\u2019 during his 2024 campaign. Now he\u2019s rolling back Biden-era regulations as gas sits above $4 a gallon",
+          "url": "https://finance.yahoo.com/energy/articles/trump-slammed-biden-harris-war-162345353.html",
+          "source": "Fortune",
+          "seenAt": "2026-10-30T16:23:45Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "US Oil Companies Are Coming Out as Victors of the Iran War. They Have Made Over $130 Billion Since.",
+          "url": "https://finance.yahoo.com/energy/articles/us-oil-companies-coming-victors-160113031.html",
+          "source": "International Business Times",
+          "seenAt": "2026-10-30T16:01:13Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Buy This Incredible Artificial Intelligence (AI) Stock Before It Soars 144% (Hint: It Will Outpace Nvidia\u2019s Growth)",
+          "url": "https://finance.yahoo.com/technology/ai/articles/buy-incredible-artificial-intelligence-ai-122402793.html",
+          "source": "Motley Fool",
+          "seenAt": "2026-10-30T12:24:02Z",
+          "category": "AI & chips",
+          "tone": "positive"
+        },
+        {
+          "title": "BP Quadruples Profit to Record as War Boosts Refining and Trading",
+          "url": "https://finance.yahoo.com/energy/articles/bp-quadruples-profit-record-war-113000283.html",
           "source": "Oilprice.com",
-          "seenAt": "2026-10-29T19:00:00Z",
+          "seenAt": "2026-10-30T11:30:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         }
