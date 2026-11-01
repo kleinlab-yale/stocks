@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T06:57:19.825155Z",
+  "generatedAt": "2026-11-01T07:28:53.467498Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,7 +2411,7 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-10-31T06:57:19.825155Z",
+    "generatedAt": "2026-11-01T07:28:53.467498Z",
     "status": "ok",
     "asia": {
       "status": "ok",
@@ -2458,55 +2458,23 @@
     },
     "news": {
       "status": "ok",
-      "score": 42,
-      "articleCount": 13,
+      "score": 34,
+      "articleCount": 2,
       "windowHours": 18,
       "stories": [
         {
-          "title": "US Oil Industry Earned Billions More in Profits Than During the Same Period in 2025 Amid Iran War",
-          "url": "https://finance.yahoo.com/energy/articles/us-oil-industry-earned-billions-191930856.html",
-          "source": "First for Money",
-          "seenAt": "2026-10-30T19:19:30Z",
+          "title": "Trump Speaks With Netanyahu Amid Iran War Planning",
+          "url": "https://finance.yahoo.com/m/d0de6b09-632f-309d-8eeb-ca0572ce7f4d/trump-speaks-with-netanyahu.html",
+          "source": "The Wall Street Journal",
+          "seenAt": "2026-10-31T22:41:09Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Chevron vs. Enbridge: Which Energy Giant Makes More Money Off the Iran War Oil Price Shock?",
-          "url": "https://finance.yahoo.com/energy/articles/chevron-vs-enbridge-energy-giant-180101726.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-30T18:01:01Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Trump slammed Biden-Harris for the \u2018war on energy\u2019 during his 2024 campaign. Now he\u2019s rolling back Biden-era regulations as gas sits above $4 a gallon",
-          "url": "https://finance.yahoo.com/energy/articles/trump-slammed-biden-harris-war-162345353.html",
-          "source": "Fortune",
-          "seenAt": "2026-10-30T16:23:45Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "US Oil Companies Are Coming Out as Victors of the Iran War. They Have Made Over $130 Billion Since.",
-          "url": "https://finance.yahoo.com/energy/articles/us-oil-companies-coming-victors-160113031.html",
-          "source": "International Business Times",
-          "seenAt": "2026-10-30T16:01:13Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Buy This Incredible Artificial Intelligence (AI) Stock Before It Soars 144% (Hint: It Will Outpace Nvidia\u2019s Growth)",
-          "url": "https://finance.yahoo.com/technology/ai/articles/buy-incredible-artificial-intelligence-ai-122402793.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-10-30T12:24:02Z",
-          "category": "AI & chips",
-          "tone": "positive"
-        },
-        {
-          "title": "BP Quadruples Profit to Record as War Boosts Refining and Trading",
-          "url": "https://finance.yahoo.com/energy/articles/bp-quadruples-profit-record-war-113000283.html",
-          "source": "Oilprice.com",
-          "seenAt": "2026-10-30T11:30:00Z",
+          "title": "Big Oil\u2019s Iran War Windfall Is Nearly 3 Times Last Year\u2019s Profits",
+          "url": "https://finance.yahoo.com/energy/articles/big-oil-iran-war-windfall-123258110.html",
+          "source": "24/7 Wall St.",
+          "seenAt": "2026-10-31T12:32:58Z",
           "category": "Geopolitics",
           "tone": "negative"
         }
