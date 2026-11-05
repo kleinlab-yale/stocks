@@ -28,7 +28,13 @@ import {
 import {
   marketSnapshotIsFresh,
   newestQuotesBySymbol,
+  quoteIsStale,
 } from "@/lib/market-freshness.js";
+import {
+  fetchBatchedStockQuotes,
+  mapWithConcurrency,
+  nasdaqTradeTimestamp,
+} from "@/lib/stock-quotes.js";
 
 export const dynamic = "force-dynamic";
 
@@ -138,6 +144,7 @@ type ResolvedQuote = {
   previousCloseCents: number | null;
   generatedAt: string;
   source: string;
+  refreshedAt?: number;
 };
 
 type QuoteCacheRow = {
@@ -234,7 +241,9 @@ const quoteMemoryCache = new Map<
   string,
   { expiresAt: number; quote: ResolvedQuote }
 >();
-const quoteRefreshesInFlight = new Set<string>();
+// Expiring leases recover even if a Worker request is canceled mid-refresh.
+const quoteRefreshesInFlight = new Map<string, number>();
+const quoteRefreshAttempts = new Map<string, number>();
 const dividendRefreshesInFlight = new Set<string>();
 let marketMemoryCache:
   | { expiresAt: number; snapshot: MarketSnapshot }
@@ -411,7 +420,10 @@ async function fetchMarket() {
     return snapshot;
   } catch {
     if (marketMemoryCache) return marketMemoryCache.snapshot;
-    throw new HttpError(503, "The shared market snapshot is unavailable.");
+    return {
+      generatedAt: new Date(0).toISOString(), mode: "degraded", symbols: [],
+      session: { label: "Shared feed unavailable · Live quotes" },
+    } satisfies MarketSnapshot;
   }
 }
 
@@ -423,13 +435,6 @@ function moneyStringToCents(value: unknown) {
   return Number.isFinite(amount) && amount > 0
     ? Math.round(amount * 100)
     : null;
-}
-
-function nasdaqTimestamp(value: unknown) {
-  const text = String(value ?? "").trim();
-  const normalized = text.replace(/\s+ET$/i, " GMT-0400");
-  const timestamp = Date.parse(normalized);
-  return Number.isFinite(timestamp) ? timestamp : Date.now();
 }
 
 function snapshotQuote(
@@ -490,6 +495,7 @@ async function cachedQuotes(db: D1Database, symbols: string[]) {
         previousCloseCents: row.previous_close_cents,
         generatedAt: new Date(row.quoted_at).toISOString(),
         source: row.source,
+        refreshedAt: row.updated_at,
       }) satisfies ResolvedQuote,
   );
 }
@@ -497,12 +503,15 @@ async function cachedQuotes(db: D1Database, symbols: string[]) {
 async function fetchNasdaqInfo(
   symbol: string,
   assetClass: "stocks" | "etf",
+  signal?: AbortSignal,
 ): Promise<ResolvedQuote | null> {
   const response = await fetch(
     `${NASDAQ_QUOTE_URL}/${encodeURIComponent(symbol)}/info?assetclass=${assetClass}`,
     {
       cache: "no-store",
-      signal: AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS),
+      signal: signal
+        ? AbortSignal.any([signal, AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS)])
+        : AbortSignal.timeout(QUOTE_FETCH_TIMEOUT_MS),
       headers: {
         Accept: "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
@@ -511,16 +520,21 @@ async function fetchNasdaqInfo(
     },
   );
   if (!response.ok) {
+    await response.body?.cancel();
     throw new Error(`Nasdaq quote request returned ${response.status}.`);
   }
   const payload = (await response.json()) as NasdaqInfoResponse;
   const priceCents = moneyStringToCents(
     payload.data?.primaryData?.lastSalePrice,
   );
+  const quotedAt = nasdaqTradeTimestamp(payload.data?.primaryData?.lastTradeTimestamp);
   if (
     payload.status?.rCode !== 200 ||
     !payload.data?.symbol ||
-    !priceCents
+    !priceCents ||
+    quotedAt === null ||
+    quotedAt > Date.now() + 60_000 ||
+    cleanSymbol(payload.data.symbol) !== symbol
   ) {
     return null;
   }
@@ -531,11 +545,78 @@ async function fetchNasdaqInfo(
     previousCloseCents: moneyStringToCents(
       payload.data.secondaryData?.lastSalePrice,
     ),
-    generatedAt: new Date(
-      nasdaqTimestamp(payload.data.primaryData?.lastTradeTimestamp),
-    ).toISOString(),
+    generatedAt: new Date(quotedAt).toISOString(),
     source: "Nasdaq Last Sale",
   };
+}
+
+async function fetchStockQuote(symbol: string): Promise<ResolvedQuote> {
+  const controller = new AbortController();
+  const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(8_000)]);
+  const nasdaq = async () => {
+    for (const assetClass of ["stocks", "etf"] as const) {
+      try {
+        const quote = await fetchNasdaqInfo(symbol, assetClass, signal);
+        if (quote && !quoteIsStale(quote)) return quote;
+      } catch {
+        // A failed stock lookup must not suppress the ETF/provider fallback.
+      }
+    }
+    throw new Error(`No current Nasdaq quote for ${symbol}.`);
+  };
+  const yahoo = async () => {
+    const [quote] = await fetchBatchedStockQuotes([symbol], { signal });
+    if (!quote || quoteIsStale(quote)) throw new Error(`No current batch quote for ${symbol}.`);
+    return quote as ResolvedQuote;
+  };
+  try {
+    return await Promise.any([yahoo(), nasdaq()]);
+  } finally {
+    controller.abort();
+  }
+}
+
+async function persistQuotes(db: D1Database, quotes: ResolvedQuote[]) {
+  if (!quotes.length) return;
+  const now = Date.now();
+  await db.batch(quotes.map((quote) => db.prepare(
+    `INSERT INTO quote_cache (
+      symbol, name, price_cents, previous_close_cents, quoted_at, source, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(symbol) DO UPDATE SET
+      name = excluded.name, price_cents = excluded.price_cents,
+      previous_close_cents = excluded.previous_close_cents,
+      quoted_at = excluded.quoted_at, source = excluded.source,
+      updated_at = excluded.updated_at
+    WHERE excluded.quoted_at >= quote_cache.quoted_at`,
+  ).bind(
+    quote.symbol, quote.name, quote.priceCents, quote.previousCloseCents,
+    Date.parse(quote.generatedAt), quote.source, now,
+  )));
+  quotes.forEach((quote) => {
+    const current = quoteMemoryCache.get(quote.symbol);
+    if (!current || Date.parse(quote.generatedAt) >= Date.parse(current.quote.generatedAt)) {
+      quoteMemoryCache.set(quote.symbol, { expiresAt: now + QUOTE_MEMORY_TTL_MS, quote });
+    }
+  });
+}
+
+async function refreshHeldStockQuotes(
+  db: D1Database,
+  symbols: string[],
+  cached: ResolvedQuote[],
+) {
+  const now = Date.now();
+  const bySymbol = new Map(cached.map((quote) => [quote.symbol, quote]));
+  const needed = symbols.filter((symbol) => {
+    const quote = bySymbol.get(symbol);
+    return !isCryptoPair(symbol) && (!quote?.refreshedAt || now - quote.refreshedAt >= QUOTE_MEMORY_TTL_MS);
+  });
+  // Two small batch requests cover an entire family league. This bounded,
+  // awaited refresh updates the first view instead of relying on waitUntil.
+  const refreshed = await fetchBatchedStockQuotes(needed);
+  await persistQuotes(db, refreshed);
+  return newestQuotesBySymbol([...cached, ...refreshed]) as ResolvedQuote[];
 }
 
 async function fetchCoinbaseCryptoQuote(
@@ -889,6 +970,7 @@ async function resolveQuote(
   if (
     configured &&
     marketSnapshotIsFresh(snapshot) &&
+    !quoteIsStale(configured) &&
     !["stale", "unavailable"].includes(
       snapshot?.symbols.find((item) => item.symbol === symbol)?.status ?? "ok",
     )
@@ -897,10 +979,11 @@ async function resolveQuote(
   }
 
   const memory = quoteMemoryCache.get(symbol);
-  if (memory && memory.expiresAt > Date.now()) return memory.quote;
+  if (memory && memory.expiresAt > Date.now() && !quoteIsStale(memory.quote)) return memory.quote;
   const persistent = await cachedQuote(db, symbol);
   if (
     persistent &&
+    !quoteIsStale(persistent.quote) &&
     persistent.updatedAt + QUOTE_MEMORY_TTL_MS > Date.now()
   ) {
     quoteMemoryCache.set(symbol, {
@@ -913,43 +996,15 @@ async function resolveQuote(
   try {
     const quote = isCryptoPair(symbol)
       ? await fetchCoinbaseCryptoQuote(symbol)
-      : (await fetchNasdaqInfo(symbol, "stocks")) ??
-        (await fetchNasdaqInfo(symbol, "etf"));
+      : await fetchStockQuote(symbol);
     if (!quote) {
       throw new HttpError(
         404,
         `${symbol} was not found as a supported stock, ETF, or USD crypto pair.`,
       );
     }
-    await db
-      .prepare(
-        `INSERT INTO quote_cache (
-          symbol, name, price_cents, previous_close_cents,
-          quoted_at, source, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(symbol) DO UPDATE SET
-          name = excluded.name,
-          price_cents = excluded.price_cents,
-          previous_close_cents = excluded.previous_close_cents,
-          quoted_at = excluded.quoted_at,
-          source = excluded.source,
-          updated_at = excluded.updated_at`,
-      )
-      .bind(
-        quote.symbol,
-        quote.name,
-        quote.priceCents,
-        quote.previousCloseCents,
-        new Date(quote.generatedAt).getTime(),
-        quote.source,
-        Date.now(),
-      )
-      .run();
-    quoteMemoryCache.set(symbol, {
-      expiresAt: Date.now() + QUOTE_MEMORY_TTL_MS,
-      quote,
-    });
-    return quote;
+    await persistQuotes(db, [quote]);
+    return newestQuotesBySymbol([quote, persistent?.quote].filter(Boolean))[0] as ResolvedQuote;
   } catch (error) {
     const cached = persistent ?? (await cachedQuote(db, symbol));
     const fallback = newestQuotesBySymbol(
@@ -957,6 +1012,7 @@ async function resolveQuote(
     )[0] as ResolvedQuote | undefined;
     if (
       fallback &&
+      !quoteIsStale(fallback) &&
       quoteTimestampIsExecutable(
         fallback.generatedAt,
         Date.now(),
@@ -979,15 +1035,24 @@ function refreshQuotesInBackground(
 ) {
   const context = getRequestExecutionContext();
   if (!context) return;
+  const now = Date.now();
   const pendingSymbols = symbols.filter(
-    (symbol) => !quoteRefreshesInFlight.has(symbol),
-  );
+    (symbol) => (quoteRefreshesInFlight.get(symbol) ?? 0) <= now,
+  ).sort((a, b) => (quoteRefreshAttempts.get(a) ?? 0) - (quoteRefreshAttempts.get(b) ?? 0));
   if (!pendingSymbols.length) return;
-  pendingSymbols.forEach((symbol) => quoteRefreshesInFlight.add(symbol));
-  const refresh = Promise.allSettled(
-    pendingSymbols.map((symbol) => resolveQuote(db, symbol)),
-  ).then(() => {
-    pendingSymbols.forEach((symbol) => quoteRefreshesInFlight.delete(symbol));
+  const deadline = now + 20_000;
+  const refresh = mapWithConcurrency(pendingSymbols, 3, async (symbol: string) => {
+    if (Date.now() >= deadline) return;
+    quoteRefreshesInFlight.set(symbol, Date.now() + 30_000);
+    quoteRefreshAttempts.set(symbol, Date.now());
+    try {
+      const quote = await resolveQuote(db, symbol);
+      if (quoteIsStale(quote)) console.warn(`Quote remains delayed for ${symbol}: ${quote.generatedAt}`);
+    } catch (error) {
+      console.warn(`Quote refresh failed for ${symbol}:`, error instanceof Error ? error.message : "Unknown provider error");
+    } finally {
+      quoteRefreshesInFlight.delete(symbol);
+    }
   });
   context.waitUntil(refresh);
 }
@@ -1149,6 +1214,7 @@ async function recordAndLoadPortfolioTrends(
     seatId: string;
     playerName: string | null;
     afterTaxCents: number;
+    valuationStale?: boolean;
   }>,
 ) {
   if (!game.started_at || !leaderboard.length) {
@@ -1170,7 +1236,8 @@ async function recordAndLoadPortfolioTrends(
 
   leaderboard.forEach((player) => {
     const seat = seatsById.get(player.seatId);
-    if (!seat) return;
+    // Do not save new trend/bonus observations using a known-delayed valuation.
+    if (!seat || player.valuationStale) return;
     const baselineAt = Math.max(
       game.started_at ?? game.created_at,
       seat.joined_at ?? 0,
@@ -1554,6 +1621,8 @@ async function health(request: Request) {
       crypto: true,
       seatOneHostAccess: true,
       protectedEndGame: true,
+      batchedHeldQuotes: true,
+      perHoldingQuoteTimes: true,
     },
   });
 }
@@ -2167,16 +2236,23 @@ async function gameState(request: Request) {
       ? market.symbols
           .filter((item) =>
             Number(item.price) > 0 &&
+            !quoteIsStale(snapshotQuote(market, item.symbol)) &&
             !["stale", "unavailable"].includes(item.status ?? "ok"),
           )
           .map((item) => item.symbol)
       : [],
   );
   const heldSymbols = [...new Set(lotResult.results.map((lot) => lot.symbol))];
-  const heldQuotes = await cachedQuotes(db, heldSymbols);
-  refreshQuotesInBackground(
+  const heldQuotes = await refreshHeldStockQuotes(
     db,
     heldSymbols.filter((symbol) => !freshConfiguredSymbols.has(symbol)),
+    await cachedQuotes(db, heldSymbols),
+  );
+  const currentHeldQuotes = new Map(heldQuotes.map((quote) => [quote.symbol, quote]));
+  refreshQuotesInBackground(
+    db,
+    heldSymbols.filter((symbol) => !freshConfiguredSymbols.has(symbol) &&
+      (isCryptoPair(symbol) || quoteIsStale(currentHeldQuotes.get(symbol)))),
   );
   const allQuotes = newestQuotesBySymbol([
     ...configuredQuotes,
@@ -2220,6 +2296,9 @@ async function gameState(request: Request) {
               )
             : 0,
           priceCents,
+          quotedAt: quote?.generatedAt ?? null,
+          quoteSource: quote?.source ?? null,
+          quoteStale: quoteIsStale(quote),
           marketValueCents,
           unrealizedCents: marketValueCents - value.basisCents,
         };
@@ -2254,6 +2333,7 @@ async function gameState(request: Request) {
             game.starting_cash_cents) *
           100,
         holdings,
+        valuationStale: holdings.some((holding) => holding.quoteStale),
       };
     })
     .sort((a, b) => b.afterTaxCents - a.afterTaxCents)
@@ -2262,6 +2342,7 @@ async function gameState(request: Request) {
   const overallLeader = leaderboard[0];
   if (
     overallLeader &&
+    !overallLeader.valuationStale &&
     game.status === "active" &&
     targetValueReached(
       overallLeader.afterTaxCents,
@@ -2321,6 +2402,7 @@ async function gameState(request: Request) {
     (latest, quote) => Math.max(latest, Date.parse(quote.generatedAt) || 0),
     0,
   );
+  const staleSymbols = heldSymbols.filter((symbol) => quoteIsStale(quotes.get(symbol)));
   return json(request, {
     game: {
       id: game.id,
@@ -2397,6 +2479,8 @@ async function gameState(request: Request) {
         ? new Date(latestQuoteAt).toISOString()
         : market.generatedAt,
       feedGeneratedAt: market.generatedAt,
+      staleSymbols,
+      checkedAt: new Date().toISOString(),
       mode: marketSnapshotIsFresh(market) ? market.mode : "degraded",
       sessionLabel,
       executionPolicy: "latest-available",
@@ -2412,6 +2496,7 @@ async function gameState(request: Request) {
         previousCloseCents: quote.previousCloseCents,
         generatedAt: quote.generatedAt,
         source: quote.source,
+        stale: quoteIsStale(quote),
       })),
     },
   });

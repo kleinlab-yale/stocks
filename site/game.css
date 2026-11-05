@@ -773,6 +773,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible
 }
 .holding-symbol strong { display: block; font-size: 15px; }
 .holding-symbol span { display: block; margin-top: 2px; overflow: hidden; color: #7b8581; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.holding-quote { display: block; margin-top: 5px; color: #52605a; font-size: 9px; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.holding-quote.quote-delayed { color: #9b4d13; }
+.quote-warning { margin: 0 0 15px; padding: 10px 13px; border: 1px solid #d8a56a; border-radius: 10px; background: #fff4df; color: #7b4519; font-size: 11px; line-height: 1.5; }
 .holding-metric span { display: block; color: #7b8581; font-size: 7px; text-transform: uppercase; }
 .holding-metric strong { display: block; margin-top: 3px; font-size: 10px; }
 .holding-card button {

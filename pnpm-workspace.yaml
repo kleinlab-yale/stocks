@@ -1,0 +1,5 @@
+allowBuilds:
+  # These dependencies ship platform binaries; do not run install scripts.
+  esbuild: false
+  sharp: false
+  workerd: false

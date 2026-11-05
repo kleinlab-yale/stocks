@@ -668,6 +668,11 @@
     `;
   }
 
+  function renderHoldingQuote(holding) {
+    const when = holding.quotedAt ? dateTime(holding.quotedAt) : "Time unavailable";
+    return `<small class="holding-quote${holding.quoteStale ? " quote-delayed" : ""}" title="${escapeHtml(holding.quoteSource || "Last available quote")}">${holding.priceCents ? money(holding.priceCents) : "Price unavailable"} · ${holding.quoteStale ? "Delayed · " : ""}${escapeHtml(when)}</small>`;
+  }
+
   function renderHoldings(holdings, canSell) {
     if (!holdings?.length) {
       return `<div class="empty-compact">No positions yet. Your first purchase will appear here.</div>`;
@@ -679,6 +684,7 @@
             <div class="holding-symbol">
               <strong>${escapeHtml(holding.symbol)}</strong>
               <span>${escapeHtml(holding.name)}</span>
+              ${renderHoldingQuote(holding)}
             </div>
             <div class="holding-metric"><span>Shares</span><strong>${shares(holding.shares)}</strong></div>
             <div class="holding-metric"><span>Value</span><strong>${money(holding.marketValueCents)}</strong></div>
@@ -778,7 +784,7 @@
             <summary>
               <span class="rank-number">${player.rank}</span>
               ${renderPlayerAvatar(player.playerName, "leader-avatar")}
-              <span class="leader-name"><strong>${escapeHtml(player.playerName)} ${renderPlayerNickname(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""} · Tap to view</span></span>
+              <span class="leader-name"><strong>${escapeHtml(player.playerName)} ${renderPlayerNickname(player.playerName)}${player.seatId === youSeat ? " · You" : ""}${player.seatId === winnerSeat ? " · Champion" : ""}</strong><span>${player.holdings.length} position${player.holdings.length === 1 ? "" : "s"}${player.bonusCents ? ` · ${money(player.bonusCents)} bonuses` : ""}${player.dividendIncomeCents ? ` · ${money(player.dividendIncomeCents)} dividends` : ""}${player.valuationStale ? " · Delayed price" : ""} · Tap to view</span></span>
               <span class="leader-metric"><span>After tax</span><strong>${money(player.afterTaxCents)}</strong></span>
               <span class="leader-metric cash"><span>Cash</span><strong>${money(player.spendableCashCents)}</strong></span>
               <span class="leader-metric tax"><span>Return</span><strong class="${gainClass(player.returnPercent)}">${percent(player.returnPercent)}</strong></span>
@@ -807,6 +813,7 @@
                                 <div class="leader-position-title">
                                   <strong>${escapeHtml(holding.symbol)}</strong>
                                   <span>${escapeHtml(holding.name)}</span>
+                                  ${renderHoldingQuote(holding)}
                                 </div>
                                 <div class="leader-position-metrics">
                                   <span>Shares<strong>${shares(holding.shares)}</strong></span>
@@ -1231,12 +1238,13 @@
         <div class="game-title">
           <span class="state-pill ${stateClass}">${escapeHtml(data.game.status)}</span>
           <h1>${escapeHtml(data.game.name)}</h1>
-          <p>${countdown(data.game)} · ${joined} player${joined === 1 ? "" : "s"} · Quotes updated ${dateTime(data.market.generatedAt)}</p>
+          <p>${countdown(data.game)} · ${joined} player${joined === 1 ? "" : "s"} · Prices checked ${dateTime(data.market.checkedAt || data.market.generatedAt)}</p>
         </div>
         <div class="game-actions">
           <button class="secondary-action" type="button" data-action="refresh">Refresh</button>
         </div>
       </div>
+      ${data.market.staleSymbols?.length ? `<div class="quote-warning" role="status"><strong>Delayed prices: ${escapeHtml(data.market.staleSymbols.join(", "))}.</strong> Affected portfolio totals are estimates using the last known prices. We’ll keep retrying; each position shows its quote time.</div>` : ""}
       <section class="game-board">
         <div class="game-board-cell game-board-main">
           <span>${you ? "Your after-tax value" : "Current leader"}</span>
