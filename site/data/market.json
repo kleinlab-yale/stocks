@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-07T08:42:25.674386Z",
+  "generatedAt": "2026-11-08T08:55:52.569450Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,7 +2411,7 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-11-07T08:42:25.674386Z",
+    "generatedAt": "2026-11-08T08:55:52.569450Z",
     "status": "ok",
     "asia": {
       "status": "ok",
@@ -2458,57 +2458,57 @@
     },
     "news": {
       "status": "ok",
-      "score": 45,
-      "articleCount": 15,
+      "score": 49,
+      "articleCount": 14,
       "windowHours": 18,
       "stories": [
         {
-          "title": "How the Iran war helped Democrats win the midterms",
-          "url": "https://www.aljazeera.com/opinions/2026/11/7/how-the-iran-war-helped-democrats-win-the-midterms",
-          "source": "aljazeera.com",
-          "seenAt": "2026-11-07T08:00:00Z",
+          "title": "Oil tumbles as US midterm results raise hopes of Iran peace deal",
+          "url": "http://www.theusnews.com/news/279411615/oil-tumbles-as-us-midterm-results-raise-hopes-of-iran-peace-deal",
+          "source": "theusnews.com",
+          "seenAt": "2026-11-08T00:00:00Z",
+          "category": "Geopolitics",
+          "tone": "positive"
+        },
+        {
+          "title": "World News : US looks to restrict Iran land trade",
+          "url": "https://www.gdnonline.com:443/Details/1412160/US-looks-to-restrict-Iran-land-trade",
+          "source": "gdnonline.com",
+          "seenAt": "2026-11-08T00:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Man with 3 guns arrested near White House after alleged threat to kill Trump",
-          "url": "https://turnto10.com/news/nation-world/man-with-3-guns-arrested-near-white-house-after-alleged-threat-to-kill-trump",
-          "source": "turnto10.com",
-          "seenAt": "2026-11-07T07:00:00Z",
+          "title": "Trump orders DOJ probe into Democrats over alleged threats against admin officials",
+          "url": "https://www.fox7austin.com/news/trump-orders-doj-probe-democrats-over-alleged-threats-against-admin-officials",
+          "source": "fox7austin.com",
+          "seenAt": "2026-11-08T00:00:00Z",
           "category": "Policy",
           "tone": "negative"
         },
         {
-          "title": "Qatar says mediation with US , Iran continues to avert escalation",
-          "url": "https://www.freemalaysiatoday.com/category/world/2026/11/07/qatar-says-mediation-with-us-iran-continues-to-avert-escalation",
-          "source": "freemalaysiatoday.com",
-          "seenAt": "2026-11-07T07:00:00Z",
+          "title": "Taiwan seeks progress on stalled $14 billion US arms deal",
+          "url": "http://www.dallassun.com/news/279414927/taiwan-seeks-progress-on-stalled-usd14-billion-us-arms-deal",
+          "source": "dallassun.com",
+          "seenAt": "2026-11-08T00:00:00Z",
+          "category": "Geopolitics",
+          "tone": "positive"
+        },
+        {
+          "title": "Drone and missile attacks wound 9 in Ukraine",
+          "url": "https://www.mercurynews.com/2026/11/07/drone-and-missile-attacks-wound-9-as-ukraine-prepares-for-talks-with-russia-and-the-us/",
+          "source": "mercurynews.com",
+          "seenAt": "2026-11-08T00:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Qatar continues mediation in US - Iran conflict",
-          "url": "https://www.edenmagnet.com.au/story/9387487/qatar-continues-mediation-in-us-iran-conflict/",
-          "source": "edenmagnet.com.au",
-          "seenAt": "2026-11-07T07:00:00Z",
+          "title": "The Iran War Is as America First as It Gets",
+          "url": "https://jewlicious.com/2026/11/iran-war-america-first/",
+          "source": "jewlicious.com",
+          "seenAt": "2026-11-08T00:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
-        },
-        {
-          "title": "Tobacco war plan , $400m for buses lead campaign pitches",
-          "url": "https://www.edenmagnet.com.au/story/9387401/tobacco-war-plan-400m-for-buses-lead-campaign-pitches/",
-          "source": "edenmagnet.com.au",
-          "seenAt": "2026-11-07T07:00:00Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Qualcomm Confirms AI - Native 6G Plans With 2029 Launch Target",
-          "url": "https://www.gizchina.com/qualcomm/qualcomm-confirms-ai-native-6g-plans-with-2029-launch-target",
-          "source": "gizchina.com",
-          "seenAt": "2026-11-07T08:00:00Z",
-          "category": "AI & chips",
-          "tone": "mixed"
         }
       ],
       "source": "GDELT DOC 2.0"
