@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-08T08:55:52.569450Z",
+  "generatedAt": "2026-11-09T09:42:42.558807Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
   "session": {
-    "label": "Market closed",
+    "label": "Pre-market",
     "timezone": "America/New_York"
   },
   "symbols": [
@@ -12,14 +12,14 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 188.7001,
+      "quotedAt": "2026-11-09T09:40:00Z",
+      "price": 177.28,
       "regularPrice": 186.64,
       "previousClose": 186.64,
       "weekAgoClose": 202.06,
       "yearAgoClose": 188.15,
       "fiveYearAgoClose": 30.39,
-      "premarketPrice": null,
+      "premarketPrice": 177.28,
       "afterHoursPrice": null,
       "sparkline": [
         213.66,
@@ -29,7 +29,7 @@
         200.13,
         181.6,
         186.64,
-        188.7001
+        177.28
       ],
       "yearSparkline": [
         188.15,
@@ -355,14 +355,14 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 612.0,
+      "quotedAt": "2026-11-09T09:41:32Z",
+      "price": 614.65,
       "regularPrice": 610.15,
       "previousClose": 610.15,
       "weekAgoClose": 606.73,
       "yearAgoClose": 621.71,
       "fiveYearAgoClose": 340.89,
-      "premarketPrice": null,
+      "premarketPrice": 614.65,
       "afterHoursPrice": null,
       "sparkline": [
         624.52,
@@ -372,7 +372,7 @@
         630.0,
         605.08,
         610.15,
-        612.0
+        614.65
       ],
       "yearSparkline": [
         621.71,
@@ -698,14 +698,14 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 448.14,
+      "quotedAt": "2026-11-09T09:42:00Z",
+      "price": 455.776,
       "regularPrice": 449.04,
       "previousClose": 449.04,
       "weekAgoClose": 466.84,
       "yearAgoClose": 233.54,
       "fiveYearAgoClose": 147.89,
-      "premarketPrice": null,
+      "premarketPrice": 455.776,
       "afterHoursPrice": null,
       "sparkline": [
         566.42,
@@ -715,7 +715,7 @@
         488.78,
         404.4,
         449.04,
-        448.14
+        455.776
       ],
       "yearSparkline": [
         233.54,
@@ -1041,14 +1041,14 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 531.4,
+      "quotedAt": "2026-11-09T09:34:02Z",
+      "price": 535.7,
       "regularPrice": 530.61,
       "previousClose": 530.61,
       "weekAgoClose": 507.12,
       "yearAgoClose": 496.82,
       "fiveYearAgoClose": 336.72,
-      "premarketPrice": null,
+      "premarketPrice": 535.7,
       "afterHoursPrice": null,
       "sparkline": [
         530.14,
@@ -1058,7 +1058,7 @@
         555.8,
         535.93,
         530.61,
-        531.4
+        535.7
       ],
       "yearSparkline": [
         496.82,
@@ -1384,14 +1384,14 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 284.43,
+      "quotedAt": "2026-11-09T09:40:00Z",
+      "price": 286.66,
       "regularPrice": 283.93,
       "previousClose": 283.93,
       "weekAgoClose": 278.04,
       "yearAgoClose": 279.7,
       "fiveYearAgoClose": 149.6455,
-      "premarketPrice": null,
+      "premarketPrice": 286.66,
       "afterHoursPrice": null,
       "sparkline": [
         282.32,
@@ -1401,7 +1401,7 @@
         287.3,
         281.74,
         283.93,
-        284.43
+        286.66
       ],
       "yearSparkline": [
         279.7,
@@ -1727,14 +1727,14 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 378.62,
+      "quotedAt": "2026-11-09T09:40:00Z",
+      "price": 377.5,
       "regularPrice": 375.44,
       "previousClose": 375.44,
       "weekAgoClose": 398.63,
       "yearAgoClose": 286.5,
       "fiveYearAgoClose": 118.69,
-      "premarketPrice": null,
+      "premarketPrice": 377.5,
       "afterHoursPrice": null,
       "sparkline": [
         431.81,
@@ -1744,7 +1744,7 @@
         395.75,
         353.1,
         375.44,
-        378.62
+        377.5
       ],
       "yearSparkline": [
         286.5,
@@ -2070,14 +2070,14 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "quotedAt": "2026-11-07T00:55:00Z",
-      "price": 1.7697,
+      "quotedAt": "2026-11-09T09:37:50Z",
+      "price": 1.77,
       "regularPrice": 1.74,
       "previousClose": 1.74,
       "weekAgoClose": 1.76,
       "yearAgoClose": 18.26,
       "fiveYearAgoClose": 10.65,
-      "premarketPrice": null,
+      "premarketPrice": 1.77,
       "afterHoursPrice": null,
       "sparkline": [
         1.98,
@@ -2087,7 +2087,7 @@
         2.14,
         1.88,
         1.74,
-        1.7697
+        1.77
       ],
       "yearSparkline": [
         18.26,
@@ -2411,46 +2411,46 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-11-08T08:55:52.569450Z",
+    "generatedAt": "2026-11-09T09:42:42.558807Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 25,
-      "averageChangePercent": -3.61,
+      "score": 67,
+      "averageChangePercent": 1.23,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 57434.77,
-          "changePercent": -5.96,
+          "price": 58775.5,
+          "changePercent": 2.33,
           "status": "ok"
         },
         {
           "symbol": "^HSI",
           "name": "Hang Seng",
-          "price": 24481.86,
-          "changePercent": -1.27,
+          "price": 24448.95,
+          "changePercent": -0.13,
           "status": "ok"
         },
         {
           "symbol": "000001.SS",
           "name": "Shanghai",
-          "price": 3649.18,
-          "changePercent": -1.1,
+          "price": 3660.79,
+          "changePercent": 0.32,
           "status": "ok"
         },
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5059.69,
-          "changePercent": -6.02,
+          "price": 5018.85,
+          "changePercent": -0.81,
           "status": "ok"
         },
         {
           "symbol": "^TWII",
           "name": "Taiwan",
-          "price": 39701.64,
-          "changePercent": -4.51,
+          "price": 41661.7,
+          "changePercent": 4.94,
           "status": "ok"
         }
       ],
@@ -2458,60 +2458,53 @@
     },
     "news": {
       "status": "ok",
-      "score": 49,
-      "articleCount": 14,
+      "score": 38,
+      "articleCount": 5,
       "windowHours": 18,
       "stories": [
         {
-          "title": "Oil tumbles as US midterm results raise hopes of Iran peace deal",
-          "url": "http://www.theusnews.com/news/279411615/oil-tumbles-as-us-midterm-results-raise-hopes-of-iran-peace-deal",
-          "source": "theusnews.com",
-          "seenAt": "2026-11-08T00:00:00Z",
-          "category": "Geopolitics",
-          "tone": "positive"
-        },
-        {
-          "title": "World News : US looks to restrict Iran land trade",
-          "url": "https://www.gdnonline.com:443/Details/1412160/US-looks-to-restrict-Iran-land-trade",
-          "source": "gdnonline.com",
-          "seenAt": "2026-11-08T00:00:00Z",
+          "title": "Elizabeth Warren Says Democrats Have \u2018a Lot of Different Tools\u2019 to Pressure Trump Over Iran War \u2014 Here\u2019s What Crypto Bettors Expect",
+          "url": "https://finance.yahoo.com/markets/crypto/articles/elizabeth-warren-says-democrats-lot-030948714.html",
+          "source": "Benzinga Prediction Markets",
+          "seenAt": "2026-11-09T03:09:48Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Trump orders DOJ probe into Democrats over alleged threats against admin officials",
-          "url": "https://www.fox7austin.com/news/trump-orders-doj-probe-democrats-over-alleged-threats-against-admin-officials",
-          "source": "fox7austin.com",
-          "seenAt": "2026-11-08T00:00:00Z",
-          "category": "Policy",
-          "tone": "negative"
-        },
-        {
-          "title": "Taiwan seeks progress on stalled $14 billion US arms deal",
-          "url": "http://www.dallassun.com/news/279414927/taiwan-seeks-progress-on-stalled-usd14-billion-us-arms-deal",
-          "source": "dallassun.com",
-          "seenAt": "2026-11-08T00:00:00Z",
-          "category": "Geopolitics",
-          "tone": "positive"
-        },
-        {
-          "title": "Drone and missile attacks wound 9 in Ukraine",
-          "url": "https://www.mercurynews.com/2026/11/07/drone-and-missile-attacks-wound-9-as-ukraine-prepares-for-talks-with-russia-and-the-us/",
-          "source": "mercurynews.com",
-          "seenAt": "2026-11-08T00:00:00Z",
+          "title": "Brent Crude Fell 12.5% But Former Biden Advisor Warns Iran War Could Return",
+          "url": "https://finance.yahoo.com/energy/articles/brent-crude-fell-12-5-020752190.html",
+          "source": "BeInCrypto",
+          "seenAt": "2026-11-09T02:07:52Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "The Iran War Is as America First as It Gets",
-          "url": "https://jewlicious.com/2026/11/iran-war-america-first/",
-          "source": "jewlicious.com",
-          "seenAt": "2026-11-08T00:00:00Z",
+          "title": "A Popular New Bet Hailing From Cryptoland Sets Off a Wall Street Turf War",
+          "url": "https://finance.yahoo.com/m/4d54da75-6425-316c-8c14-885c90c29c7a/a-popular-new-bet-hailing.html",
+          "source": "The Wall Street Journal",
+          "seenAt": "2026-11-08T20:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
+        },
+        {
+          "title": "\u2018On par with what the DoD pursued during the Cold War\u2019: Pentagon\u2019s war stockpile plan hits a minerals wall",
+          "url": "https://finance.yahoo.com/economy/policy/articles/par-dod-pursued-during-cold-164601125.html",
+          "source": "Fortune",
+          "seenAt": "2026-11-08T16:46:01Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Kevin O'Leary Makes 3 Big Predictions for 2027: US-Canada Trade Deal, Crypto Law and Iran War\u2014Are Bettors Pricing the Same Outcome?",
+          "url": "https://finance.yahoo.com/economy/policy/articles/kevin-oleary-makes-3-big-033008993.html",
+          "source": "Benzinga",
+          "seenAt": "2026-11-09T03:30:08Z",
+          "category": "Geopolitics",
+          "tone": "mixed"
         }
       ],
-      "source": "GDELT DOC 2.0"
+      "source": "Yahoo Finance News",
+      "fallbackNote": "GDELT unavailable: HTTPError"
     },
     "method": "Portfolio extended hours 50% \u00b7 Asian markets 25% \u00b7 overnight news 25%"
   },
