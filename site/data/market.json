@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-13T09:26:55.604544Z",
+  "generatedAt": "2026-11-14T08:55:08.290724Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
   "session": {
-    "label": "Pre-market",
+    "label": "Market closed",
     "timezone": "America/New_York"
   },
   "symbols": [
@@ -12,24 +12,24 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:25:00Z",
-      "price": 167.85,
-      "regularPrice": 166.19,
-      "previousClose": 166.19,
-      "weekAgoClose": 186.64,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 161.01,
+      "regularPrice": 162.85,
+      "previousClose": 162.85,
+      "weekAgoClose": 178.67,
       "yearAgoClose": 190.17,
       "fiveYearAgoClose": 32.985,
-      "premarketPrice": 167.85,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        200.13,
         181.6,
         186.64,
         178.67,
         168.89,
         173.73,
         166.19,
-        167.85
+        162.85,
+        161.01
       ],
       "yearSparkline": [
         190.17,
@@ -84,7 +84,7 @@
         210.96,
         204.64,
         186.64,
-        166.19
+        162.85
       ],
       "fiveYearSparkline": [
         32.985,
@@ -347,7 +347,7 @@
         210.96,
         204.64,
         186.64,
-        166.19
+        162.85
       ],
       "status": "ok"
     },
@@ -355,24 +355,24 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:26:53Z",
-      "price": 626.5,
-      "regularPrice": 623.61,
-      "previousClose": 623.61,
-      "weekAgoClose": 610.15,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 637.0077,
+      "regularPrice": 641.69,
+      "previousClose": 641.69,
+      "weekAgoClose": 641.37,
       "yearAgoClose": 609.46,
       "fiveYearAgoClose": 345.3,
-      "premarketPrice": 626.5,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        630.0,
         605.08,
         610.15,
         641.37,
         641.39,
         628.77,
         623.61,
-        626.5
+        641.69,
+        637.0077
       ],
       "yearSparkline": [
         609.46,
@@ -427,7 +427,7 @@
         642.62,
         614.99,
         610.15,
-        623.61
+        641.69
       ],
       "fiveYearSparkline": [
         345.3,
@@ -690,7 +690,7 @@
         642.62,
         614.99,
         610.15,
-        623.61
+        641.69
       ],
       "status": "ok"
     },
@@ -698,24 +698,24 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:25:00Z",
-      "price": 571.22,
-      "regularPrice": 585.3,
-      "previousClose": 585.3,
-      "weekAgoClose": 449.04,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 521.2,
+      "regularPrice": 534.06,
+      "previousClose": 534.06,
+      "weekAgoClose": 508.58,
       "yearAgoClose": 246.81,
       "fiveYearAgoClose": 155.41,
-      "premarketPrice": 571.22,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        488.78,
         404.4,
         449.04,
         508.58,
         515.21,
         552.9,
         585.3,
-        571.22
+        534.06,
+        521.2
       ],
       "yearSparkline": [
         246.81,
@@ -770,7 +770,7 @@
         516.79,
         504.8,
         449.04,
-        585.3
+        534.06
       ],
       "fiveYearSparkline": [
         155.41,
@@ -1033,7 +1033,7 @@
         516.79,
         504.8,
         449.04,
-        585.3
+        534.06
       ],
       "status": "ok"
     },
@@ -1041,24 +1041,24 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:25:00Z",
-      "price": 509.41,
-      "regularPrice": 523.0,
-      "previousClose": 523.0,
-      "weekAgoClose": 530.61,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 522.06,
+      "regularPrice": 523.88,
+      "previousClose": 523.88,
+      "weekAgoClose": 545.18,
       "yearAgoClose": 510.18,
       "fiveYearAgoClose": 343.11,
-      "premarketPrice": 509.41,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        555.8,
         535.93,
         530.61,
         545.18,
         533.16,
         521.13,
         523.0,
-        509.41
+        523.88,
+        522.06
       ],
       "yearSparkline": [
         510.18,
@@ -1113,7 +1113,7 @@
         524.51,
         521.91,
         530.61,
-        523.0
+        523.88
       ],
       "fiveYearSparkline": [
         343.11,
@@ -1376,7 +1376,7 @@
         524.51,
         521.91,
         530.61,
-        523.0
+        523.88
       ],
       "status": "ok"
     },
@@ -1384,24 +1384,24 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:25:00Z",
-      "price": 297.7,
-      "regularPrice": 295.35,
-      "previousClose": 295.35,
-      "weekAgoClose": 283.93,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 290.8,
+      "regularPrice": 292.52,
+      "previousClose": 292.52,
+      "weekAgoClose": 286.01,
       "yearAgoClose": 276.98,
       "fiveYearAgoClose": 149.9525,
-      "premarketPrice": 297.7,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        287.3,
         281.74,
         283.93,
         286.01,
         284.92,
         290.63,
         295.35,
-        297.7
+        292.52,
+        290.8
       ],
       "yearSparkline": [
         276.98,
@@ -1456,7 +1456,7 @@
         317.28,
         278.22,
         283.93,
-        295.35
+        292.52
       ],
       "fiveYearSparkline": [
         149.9525,
@@ -1719,7 +1719,7 @@
         317.28,
         278.22,
         283.93,
-        295.35
+        292.52
       ],
       "status": "ok"
     },
@@ -1727,24 +1727,24 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:20:00Z",
-      "price": 407.89,
-      "regularPrice": 405.49,
-      "previousClose": 405.49,
-      "weekAgoClose": 375.44,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 394.5,
+      "regularPrice": 398.73,
+      "previousClose": 398.73,
+      "weekAgoClose": 388.62,
       "yearAgoClose": 284.82,
       "fiveYearAgoClose": 124.26,
-      "premarketPrice": 407.89,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        395.75,
         353.1,
         375.44,
         388.62,
         396.48,
         413.35,
         405.49,
-        407.89
+        398.73,
+        394.5
       ],
       "yearSparkline": [
         284.82,
@@ -1799,7 +1799,7 @@
         418.51,
         406.13,
         375.44,
-        405.49
+        398.73
       ],
       "fiveYearSparkline": [
         124.26,
@@ -2062,7 +2062,7 @@
         418.51,
         406.13,
         375.44,
-        405.49
+        398.73
       ],
       "status": "ok"
     },
@@ -2070,24 +2070,24 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "quotedAt": "2026-11-13T09:26:46Z",
-      "price": 1.84,
-      "regularPrice": 1.81,
-      "previousClose": 1.81,
-      "weekAgoClose": 1.74,
+      "quotedAt": "2026-11-14T00:55:00Z",
+      "price": 1.87,
+      "regularPrice": 1.91,
+      "previousClose": 1.91,
+      "weekAgoClose": 1.88,
       "yearAgoClose": 13.8,
       "fiveYearAgoClose": 9.7,
-      "premarketPrice": 1.84,
+      "premarketPrice": null,
       "afterHoursPrice": null,
       "sparkline": [
-        2.14,
         1.88,
         1.74,
         1.88,
         1.74,
         1.99,
         1.81,
-        1.84
+        1.91,
+        1.87
       ],
       "yearSparkline": [
         13.8,
@@ -2142,7 +2142,7 @@
         1.73,
         1.89,
         1.74,
-        1.81
+        1.91
       ],
       "fiveYearSparkline": [
         9.7,
@@ -2405,13 +2405,13 @@
         1.73,
         1.89,
         1.74,
-        1.81
+        1.91
       ],
       "status": "ok"
     }
   ],
   "overnight": {
-    "generatedAt": "2026-11-13T09:26:55.604544Z",
+    "generatedAt": "2026-11-14T08:55:08.290724Z",
     "status": "ok",
     "asia": {
       "status": "ok",
@@ -2458,57 +2458,57 @@
     },
     "news": {
       "status": "ok",
-      "score": 48,
+      "score": 42,
       "articleCount": 15,
       "windowHours": 18,
       "stories": [
         {
-          "title": "Canada threatens to sue Stellantis over auto plant sale as Trump\u2019s trade war shifts production south",
-          "url": "https://finance.yahoo.com/economy/policy/articles/canada-threatens-sue-stellantis-over-232104370.html",
-          "source": "Associated Press",
-          "seenAt": "2026-11-12T23:21:04Z",
-          "category": "Policy",
+          "title": "China\u2019s $3.2 Billion AI Pipeline Still Calls for Nvidia Chips Washington Restricts",
+          "url": "https://finance.yahoo.com/technology/ai/articles/china-3-2-billion-ai-204503022.html",
+          "source": "decrypt",
+          "seenAt": "2026-11-13T20:45:03Z",
+          "category": "AI & chips",
           "tone": "negative"
         },
         {
-          "title": "Fastly vs. UiPath: Which Artificial Intelligence Stock Is a Better Buy Going into 2027?",
-          "url": "https://finance.yahoo.com/technology/ai/articles/fastly-vs-uipath-artificial-intelligence-024413683.html",
-          "source": "Motley Fool",
-          "seenAt": "2026-11-13T02:44:13Z",
-          "category": "AI & chips",
-          "tone": "mixed"
+          "title": "Department of Veterans Affairs and Department of War Go-Live on Oracle Health Information Network to Expand Nationwide Health Information Exchange",
+          "url": "https://finance.yahoo.com/healthcare/articles/department-veterans-affairs-department-war-181700956.html",
+          "source": "PR Newswire",
+          "seenAt": "2026-11-13T18:17:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
         },
         {
-          "title": "DGEN TECHNOLOGIES ACQUIRES EXCLUSIVE LICENCE TO HUMANOS ARTIFICIAL INTELLIGENCE TECHNOLOGY",
-          "url": "https://finance.yahoo.com/technology/ai/articles/dgen-technologies-acquires-exclusive-licence-213000343.html",
-          "source": "CNW Group",
-          "seenAt": "2026-11-12T21:30:00Z",
-          "category": "AI & chips",
-          "tone": "mixed"
-        },
-        {
-          "title": "Chinese AI Firms are Panic Buying Nvidia Chips",
-          "url": "https://finance.yahoo.com/technology/ai/articles/chinese-ai-firms-panic-buying-194135167.html",
-          "source": "Moby",
-          "seenAt": "2026-11-12T19:41:35Z",
-          "category": "AI & chips",
-          "tone": "mixed"
-        },
-        {
-          "title": "AI Expert, Spelman College President\u2019s New Book Offers a New Vision for the Future of Artificial Intelligence",
-          "url": "https://finance.yahoo.com/technology/ai/articles/ai-expert-spelman-college-president-191000611.html",
+          "title": "Lake Hartwell Country Highlights Revolutionary War Sites Across Upstate South Carolina During the Nation's 250th Anniversary",
+          "url": "https://finance.yahoo.com/media-advertising/articles/lake-hartwell-country-highlights-revolutionary-171600263.html",
           "source": "GlobeNewswire",
-          "seenAt": "2026-11-12T19:10:00Z",
-          "category": "AI & chips",
-          "tone": "mixed"
+          "seenAt": "2026-11-13T17:16:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
         },
         {
-          "title": "SMX Brings American Innovation to the Next Frontier of Artificial Intelligence",
-          "url": "https://finance.yahoo.com/technology/ai/articles/smx-brings-american-innovation-next-191000613.html",
-          "source": "ACCESS Newswire",
-          "seenAt": "2026-11-12T19:10:00Z",
-          "category": "AI & chips",
-          "tone": "mixed"
+          "title": "Kalshi Gets DOJ Backing Against Arkansas Amid Prediction Markets Turf War",
+          "url": "https://finance.yahoo.com/markets/options/articles/kalshi-gets-doj-backing-against-164757287.html",
+          "source": "Unchained",
+          "seenAt": "2026-11-13T16:47:57Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "Crude Prices Supported by Concerns US-Iran War Will Linger",
+          "url": "https://finance.yahoo.com/energy/articles/crude-prices-supported-concerns-us-163519855.html",
+          "source": "Barchart",
+          "seenAt": "2026-11-13T16:35:19Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "How Global Energy Markets Survived Eight Months of Iran War Disruptions",
+          "url": "https://finance.yahoo.com/energy/articles/global-energy-markets-survived-eight-143000107.html",
+          "source": "Oilprice.com",
+          "seenAt": "2026-11-13T14:30:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
         }
       ],
       "source": "Yahoo Finance News",
