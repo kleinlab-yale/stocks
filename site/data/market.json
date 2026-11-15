@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T08:55:08.290724Z",
+  "generatedAt": "2026-11-15T09:16:57.806865Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
@@ -2411,7 +2411,7 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-11-14T08:55:08.290724Z",
+    "generatedAt": "2026-11-15T09:16:57.806865Z",
     "status": "ok",
     "asia": {
       "status": "ok",
@@ -2458,55 +2458,23 @@
     },
     "news": {
       "status": "ok",
-      "score": 42,
-      "articleCount": 15,
+      "score": 25,
+      "articleCount": 2,
       "windowHours": 18,
       "stories": [
         {
-          "title": "China\u2019s $3.2 Billion AI Pipeline Still Calls for Nvidia Chips Washington Restricts",
-          "url": "https://finance.yahoo.com/technology/ai/articles/china-3-2-billion-ai-204503022.html",
-          "source": "decrypt",
-          "seenAt": "2026-11-13T20:45:03Z",
-          "category": "AI & chips",
-          "tone": "negative"
-        },
-        {
-          "title": "Department of Veterans Affairs and Department of War Go-Live on Oracle Health Information Network to Expand Nationwide Health Information Exchange",
-          "url": "https://finance.yahoo.com/healthcare/articles/department-veterans-affairs-department-war-181700956.html",
-          "source": "PR Newswire",
-          "seenAt": "2026-11-13T18:17:00Z",
+          "title": "The Fed\u2019s battle against inflation risks turning into a forever war\u2014and may last as long as Operation Iraqi Freedom while Iran \u2018status quo\u2019 drags on",
+          "url": "https://finance.yahoo.com/economy/policy/articles/fed-battle-against-inflation-risks-233114771.html",
+          "source": "Fortune",
+          "seenAt": "2026-11-14T23:31:14Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Lake Hartwell Country Highlights Revolutionary War Sites Across Upstate South Carolina During the Nation's 250th Anniversary",
-          "url": "https://finance.yahoo.com/media-advertising/articles/lake-hartwell-country-highlights-revolutionary-171600263.html",
-          "source": "GlobeNewswire",
-          "seenAt": "2026-11-13T17:16:00Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Kalshi Gets DOJ Backing Against Arkansas Amid Prediction Markets Turf War",
-          "url": "https://finance.yahoo.com/markets/options/articles/kalshi-gets-doj-backing-against-164757287.html",
-          "source": "Unchained",
-          "seenAt": "2026-11-13T16:47:57Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "Crude Prices Supported by Concerns US-Iran War Will Linger",
-          "url": "https://finance.yahoo.com/energy/articles/crude-prices-supported-concerns-us-163519855.html",
-          "source": "Barchart",
-          "seenAt": "2026-11-13T16:35:19Z",
-          "category": "Geopolitics",
-          "tone": "negative"
-        },
-        {
-          "title": "How Global Energy Markets Survived Eight Months of Iran War Disruptions",
-          "url": "https://finance.yahoo.com/energy/articles/global-energy-markets-survived-eight-143000107.html",
+          "title": "Iran War Accelerates Southeast Asia\u2019s Renewable Energy Push",
+          "url": "https://finance.yahoo.com/energy/articles/iran-war-accelerates-southeast-asia-200000988.html",
           "source": "Oilprice.com",
-          "seenAt": "2026-11-13T14:30:00Z",
+          "seenAt": "2026-11-14T20:00:00Z",
           "category": "Geopolitics",
           "tone": "negative"
         }
