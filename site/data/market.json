@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-11-15T09:16:57.806865Z",
+  "generatedAt": "2026-11-16T09:32:42.081057Z",
   "mode": "live",
   "source": "Yahoo Finance via yfinance",
   "cadenceMinutes": 15,
   "session": {
-    "label": "Market closed",
+    "label": "Pre-market",
     "timezone": "America/New_York"
   },
   "symbols": [
@@ -12,14 +12,14 @@
       "symbol": "NVDA",
       "name": "NVIDIA",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 161.01,
+      "quotedAt": "2026-11-16T09:30:00Z",
+      "price": 160.22,
       "regularPrice": 162.85,
       "previousClose": 162.85,
       "weekAgoClose": 178.67,
       "yearAgoClose": 190.17,
       "fiveYearAgoClose": 32.985,
-      "premarketPrice": null,
+      "premarketPrice": 160.22,
       "afterHoursPrice": null,
       "sparkline": [
         181.6,
@@ -29,7 +29,7 @@
         173.73,
         166.19,
         162.85,
-        161.01
+        160.22
       ],
       "yearSparkline": [
         190.17,
@@ -355,14 +355,14 @@
       "symbol": "META",
       "name": "Meta Platforms",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 637.0077,
+      "quotedAt": "2026-11-16T09:30:00Z",
+      "price": 636.9,
       "regularPrice": 641.69,
       "previousClose": 641.69,
       "weekAgoClose": 641.37,
       "yearAgoClose": 609.46,
       "fiveYearAgoClose": 345.3,
-      "premarketPrice": null,
+      "premarketPrice": 636.9,
       "afterHoursPrice": null,
       "sparkline": [
         605.08,
@@ -372,7 +372,7 @@
         628.77,
         623.61,
         641.69,
-        637.0077
+        636.9
       ],
       "yearSparkline": [
         609.46,
@@ -698,14 +698,14 @@
       "symbol": "AMD",
       "name": "Advanced Micro Devices",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 521.2,
+      "quotedAt": "2026-11-16T09:30:00Z",
+      "price": 512.0,
       "regularPrice": 534.06,
       "previousClose": 534.06,
       "weekAgoClose": 508.58,
       "yearAgoClose": 246.81,
       "fiveYearAgoClose": 155.41,
-      "premarketPrice": null,
+      "premarketPrice": 512.0,
       "afterHoursPrice": null,
       "sparkline": [
         404.4,
@@ -715,7 +715,7 @@
         552.9,
         585.3,
         534.06,
-        521.2
+        512.0
       ],
       "yearSparkline": [
         246.81,
@@ -1041,14 +1041,14 @@
       "symbol": "MSFT",
       "name": "Microsoft",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 522.06,
+      "quotedAt": "2026-11-16T09:32:30Z",
+      "price": 527.04,
       "regularPrice": 523.88,
       "previousClose": 523.88,
       "weekAgoClose": 545.18,
       "yearAgoClose": 510.18,
       "fiveYearAgoClose": 343.11,
-      "premarketPrice": null,
+      "premarketPrice": 527.04,
       "afterHoursPrice": null,
       "sparkline": [
         535.93,
@@ -1058,7 +1058,7 @@
         521.13,
         523.0,
         523.88,
-        522.06
+        527.04
       ],
       "yearSparkline": [
         510.18,
@@ -1384,14 +1384,14 @@
       "symbol": "GOOG",
       "name": "Alphabet",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 290.8,
+      "quotedAt": "2026-11-16T09:30:00Z",
+      "price": 291.78,
       "regularPrice": 292.52,
       "previousClose": 292.52,
       "weekAgoClose": 286.01,
       "yearAgoClose": 276.98,
       "fiveYearAgoClose": 149.9525,
-      "premarketPrice": null,
+      "premarketPrice": 291.78,
       "afterHoursPrice": null,
       "sparkline": [
         281.74,
@@ -1401,7 +1401,7 @@
         290.63,
         295.35,
         292.52,
-        290.8
+        291.78
       ],
       "yearSparkline": [
         276.98,
@@ -1727,14 +1727,14 @@
       "symbol": "TSM",
       "name": "Taiwan Semiconductor",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 394.5,
+      "quotedAt": "2026-11-16T09:30:59Z",
+      "price": 382.96,
       "regularPrice": 398.73,
       "previousClose": 398.73,
       "weekAgoClose": 388.62,
       "yearAgoClose": 284.82,
       "fiveYearAgoClose": 124.26,
-      "premarketPrice": null,
+      "premarketPrice": 382.96,
       "afterHoursPrice": null,
       "sparkline": [
         353.1,
@@ -1744,7 +1744,7 @@
         413.35,
         405.49,
         398.73,
-        394.5
+        382.96
       ],
       "yearSparkline": [
         284.82,
@@ -2070,14 +2070,14 @@
       "symbol": "EOSE",
       "name": "Eos Energy Enterprises",
       "currency": "USD",
-      "quotedAt": "2026-11-14T00:55:00Z",
-      "price": 1.87,
+      "quotedAt": "2026-11-16T09:25:00Z",
+      "price": 1.84,
       "regularPrice": 1.91,
       "previousClose": 1.91,
       "weekAgoClose": 1.88,
       "yearAgoClose": 13.8,
       "fiveYearAgoClose": 9.7,
-      "premarketPrice": null,
+      "premarketPrice": 1.84,
       "afterHoursPrice": null,
       "sparkline": [
         1.88,
@@ -2087,7 +2087,7 @@
         1.99,
         1.81,
         1.91,
-        1.87
+        1.84
       ],
       "yearSparkline": [
         13.8,
@@ -2411,46 +2411,46 @@
     }
   ],
   "overnight": {
-    "generatedAt": "2026-11-15T09:16:57.806865Z",
+    "generatedAt": "2026-11-16T09:32:42.081057Z",
     "status": "ok",
     "asia": {
       "status": "ok",
-      "score": 45,
-      "averageChangePercent": -0.31,
+      "score": 28,
+      "averageChangePercent": -2.1,
       "markets": [
         {
           "symbol": "^N225",
           "name": "Nikkei 225",
-          "price": 61142.35,
-          "changePercent": 0.53,
+          "price": 59662.02,
+          "changePercent": -2.42,
           "status": "ok"
         },
         {
           "symbol": "^HSI",
           "name": "Hang Seng",
-          "price": 23637.6,
-          "changePercent": -1.55,
+          "price": 23753.84,
+          "changePercent": 0.49,
           "status": "ok"
         },
         {
           "symbol": "000001.SS",
           "name": "Shanghai",
-          "price": 3634.35,
-          "changePercent": -0.59,
+          "price": 3602.57,
+          "changePercent": -0.87,
           "status": "ok"
         },
         {
           "symbol": "^KS11",
           "name": "KOSPI",
-          "price": 5290.53,
-          "changePercent": -0.98,
+          "price": 5100.5,
+          "changePercent": -3.59,
           "status": "ok"
         },
         {
           "symbol": "^TWII",
           "name": "Taiwan",
-          "price": 43675.12,
-          "changePercent": 1.35,
+          "price": 41040.08,
+          "changePercent": -6.03,
           "status": "ok"
         }
       ],
@@ -2458,25 +2458,41 @@
     },
     "news": {
       "status": "ok",
-      "score": 25,
-      "articleCount": 2,
+      "score": 36,
+      "articleCount": 4,
       "windowHours": 18,
       "stories": [
         {
-          "title": "The Fed\u2019s battle against inflation risks turning into a forever war\u2014and may last as long as Operation Iraqi Freedom while Iran \u2018status quo\u2019 drags on",
-          "url": "https://finance.yahoo.com/economy/policy/articles/fed-battle-against-inflation-risks-233114771.html",
-          "source": "Fortune",
-          "seenAt": "2026-11-14T23:31:14Z",
+          "title": "Jensen Huang Could Return to Nvidia as Silicon Valley Plans \u2018War Room,\u2019 While Anthony Scaramucci Says \u2018Not Happening\u2019",
+          "url": "https://finance.yahoo.com/markets/stocks/articles/jensen-huang-could-return-nvidia-014531281.html",
+          "source": "Benzinga",
+          "seenAt": "2026-11-16T01:45:31Z",
           "category": "Geopolitics",
           "tone": "negative"
         },
         {
-          "title": "Iran War Accelerates Southeast Asia\u2019s Renewable Energy Push",
-          "url": "https://finance.yahoo.com/energy/articles/iran-war-accelerates-southeast-asia-200000988.html",
-          "source": "Oilprice.com",
-          "seenAt": "2026-11-14T20:00:00Z",
+          "title": "Jensen Huang weighs Nvidia CEO comeback as ally plans \u2018war room\u2019: report",
+          "url": "https://finance.yahoo.com/technology/articles/jensen-huang-weighs-nvidia-ceo-225714478.html",
+          "source": "Fox Business",
+          "seenAt": "2026-11-15T22:57:14Z",
           "category": "Geopolitics",
           "tone": "negative"
+        },
+        {
+          "title": "The $130 Billion Oil Boom Fueled by the Iran War",
+          "url": "https://finance.yahoo.com/energy/articles/130-billion-oil-boom-fueled-200000667.html",
+          "source": "Oilprice.com",
+          "seenAt": "2026-11-15T20:00:00Z",
+          "category": "Geopolitics",
+          "tone": "negative"
+        },
+        {
+          "title": "The Evidence Is Piling Up: AMD Could Be the Best Artificial Intelligence (AI) Stock to Buy Amid the Sell-Off",
+          "url": "https://finance.yahoo.com/technology/ai/articles/evidence-piling-amd-could-best-134502914.html",
+          "source": "Motley Fool",
+          "seenAt": "2026-11-15T13:45:02Z",
+          "category": "AI & chips",
+          "tone": "mixed"
         }
       ],
       "source": "Yahoo Finance News",
